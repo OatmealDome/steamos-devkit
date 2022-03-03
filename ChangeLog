@@ -1,0 +1,307 @@
+2022-03-03 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220303.0
+	* Detect is 'deck' user password is set, provide a button to set or change it (opens an interactive terminal)
+	* Fix remote shell button broken on some installations (path escaping problems)
+	* Improve registration modal error dialog (pending OS update >= 20220301)
+	* Update to latest SDL on Windows, fixes a slow startup stall of several seconds
+
+2022-02-24 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220224.1
+	* Add compatibility with new OS releases (>= 20220224.100) - using polkit policies for privileged operations
+
+2022-02-22 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220222.0
+	* Improve connectivity checks when initializing connection with a devkit (was sometimes flagged incorrectly for registration)
+	* Install the remote debug tools to Proton 7 and Proton Experimental (was skipping 7)
+
+2022-02-17 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220217.0
+	* Package gpuvis binaries with the windows release again (regressed in recent packaging changes)
+	* (Valve only) Improve the side client auto-upload behavior
+
+2022-02-11 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220211.2
+	* Add a 'Browse Device Files' button - install FileZilla to use
+	* Add support for the performance overlay: toggle drawing, capture frametime data and download back to the host
+	* Improved the launch script on Linux for the Steam release
+
+2022-02-03 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220203.0
+	* (Valve only) retry 127.0.0.1 for roughly 30 seconds to compensate for devkit client being started before the tunnel is up
+	* (Valve only) no longer auto-uploading the side-loaded steam client when the device is running OS client as this was causing confusion.
+	* Improve the Steam client arguments management in the Devkits window: better refresh currently active args, track local edits ('dirty' state).
+	* Improve clarity of the status window output. Debug level logging was still printing without the --verbose flag (fixed).
+
+2022-01-13 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220113.0
+	* more fixes to the remote shell code on windows, some setups regressed in the previous release
+	* Release v0.20220112.0
+	* the remote shell open is failing on some windows systems, made changes to improve the reliability.
+	* (Valve only) aggressively sync the filesystem when configuring a side loaded Steam client, possibly fixing a boot loop situation.
+
+2022-01-07 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220107.0
+	* add some important files missed in yesterday's release
+
+2022-01-06 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220106.0
+	* improve error feedback - client now propagates more errors into UI popups
+	* make the 'Device Logs' display more robust to malformed output
+	* several internal refactors to improve speed, reliability and support new features
+
+2021-12-16 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211216.0
+	* support new gamescope png screenshots.
+	* add a 'verify checksums' option to title uploads. This recovers rare cases of content corruption that size+modtime checks do not address.
+
+2021-12-10 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211210.0
+	* New remote debug features: requires fully updated system and latest Proton Experimental
+	* Added support for Visual Studio 2017 remote debug (2019/2017 selectable in UI)
+	* Added support for "attach before startup" remote debugging
+	  see https://partner.steamgames.com/doc/steamdeck/devkits/debugging
+	* bug fix : modifications to the filter patterns in one title were affecting other titles
+	* auto upload will run even if the title is not currently selected in the UI
+
+2021-12-08 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211208.0
+	* Repackage yesterday's release with build system fixes to address some internal changes
+
+2021-12-07 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211207.0
+	* Improve delete titles functionality, remove titles from the Steam client library
+	* Update the Proton patch for remote debug setup to match latest
+
+2021-12-02 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211202.0
+	* Fix gpu-trace capture support for latest images, update bundles gpuvis on Windows
+
+2021-11-25 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211125.0
+	* Add support for new Jupiter OS image 1122.x
+
+2021-11-22 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211122.1
+	* Add support for new Jupiter OS image 1120.x
+
+2021-11-17 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211117.0
+	* Update the remote debugger setup strategy (new patch)
+	* Internal refactoring to prepare for new remote debugging features
+
+2021-11-16 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211116.0
+	* Show CEF console button whenever a side loaded Steam client is on the device (Valve specific)
+
+2021-11-10 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211110.0
+	* Fix 'Start Visual Studio C++ debugger service on launch' to work against the latest 'Proton - Experimental' release
+		note: make sure that 'Proton - Experimental' is updated to latest in order to use the feature
+		older versions of experimental, and stable Proton branches are no longer supported
+
+2021-11-08 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211108.2
+	* Fix bug in the new 'include only' filtering option. It is now possible to include entire subdirectories and match individual files in subdirectories.
+	* The third 'rsync' filtering option now takes a list of rsync arguments directly, with no processing. This enables additional options such as --copy-links etc.
+
+2021-11-05 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211105.0
+	* Add support for cancelling title uploads
+	* New upload filtering, three options:
+	- use a list of exclude patterns (matches previous implementation)
+	- use a list of only include patterns
+	- use full rsync --filter capabilities (advanced users)
+
+2021-10-27 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211027.0
+	* Test and fix feature compatibility with other OSes than Deck/Jupiter
+
+2021-10-25 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211025.0
+	* Show OS build next to device names
+	* Fix failing to pull status from kits
+	* Add a warning when detecting a device on the guest network (Valve specific)
+
+2021-10-22 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211022.1
+	* Fix gamescope/desktop session detection logic
+	* Improve the ssh/http service connectivity checks against discovered devices
+	* Add support for pairing against devices that do not enable sshd by default (OS images 20211022 or newer)
+
+2021-10-20 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211020.1
+	* Fixed: some files had timestamps several hours in the future out of the CI system, causing problems with --update uploads.
+	* Bundle gpuvis.exe on Windows. Trace capture requires Jupiter OS image >= 20211014.2
+	* Turn off wireless power management when connected to a devkit to reduce latency in remote debug and remote ssh commands
+
+2021-10-08 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211008.0
+	* side-loaded Steam client can be started under gdbserver via a checkbox, simplifying the previous flow
+	* the command line for the side-loaded Steam client can be edited in the Devkits window, improving the UX consistency
+
+2021-10-05 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211005.0
+	* Fix 'Remote Shell' not working on some Windows hosts (cause by "C:\Program Files (x86)" install paths and similar)
+
+2021-09-27 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210927.0
+	* Add an option in the delete tool to reset the Steam client and all downloaded content:
+	  This will recover from disk full situations and a few related problems causing the Steam client to fail in a loop during startup
+	* Release v0.20210924.0
+	* Add support for deleting uploaded titles, individually or in bulk
+	* Add support for retrieving controller configuration (requires Steam client 1632434294 or newer)
+	* Pull and display Steam client version
+	* Misc changes to the layout, improving the flow when adding by IP and managing kits not registered
+	* Fix failing to switch the OS client to dev mode with logging if no titles had been uploaded yet
+	* Fix an instance of the process lingering after closing the main window on Windows systems
+
+2021-09-17 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210917.0
+	* Download minidump directory from device when syncing logs
+
+2021-09-01 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210903.1
+	* Fix side-loaded Steam client exclude patterns so some important files for Steam Play are correctly included
+	* Release v0.20210903.0
+	* Fix msvsmon uploads to include webservices.dll from the systems folder, fixes a Proton bug
+	* Make 'OS Client in dev mode' verbose the current branch in the same way 'OS client' does
+	* Add /silent to the msvsmon option to avoid the window being in the foreground
+
+2021-09-01 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210901.0
+	* Only show the 'CEF console' when CEF debugging is enabled (for clarity, the feature is only used by Valve's Steam developers)
+	* Add a new 'OS client dev mode': changing the Steam command line and capturing Steam + launched title logs
+	* Additional fixes to disable proxy when talking to devkits
+	* Force 'steam' title name to be all lowercase - avoids a variety of bugs in the side-loaded Steam client support
+	* The command line interface was removed from the package, only the GUI version of the tool is available until the CLI functionality can be revised
+
+2021-08-25 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210825.0
+	* Persist and reconnect devkits added by IP
+	* Add a new --logfile option to devkit-gui.exe to write out a log file for debugging purposes
+	* Fix devkit-gui.exe process not exiting after the window is closed
+	* Improve robustness when opening the SDL GL window
+
+2021-08-24 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210824.0
+	* Reduce spam in the Status window, reduce runaway socket usage caused by zeroconf
+	* Handle Windows systems with no USERNAME environment variable
+	* Force a write of settings to disk when saving configs
+
+2021-08-17 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210817.0
+	* Fix command windows popping up when executing sub processes on Windows hosts
+	* Improve insufficient network connectivity checks and reporting
+	* Add support for portforwarded devkits using a 32001 http port (Windows hosts only)
+
+2021-08-10 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210810.0
+	* Remote debugger binaries are now searched for and copied from the local Windows host system
+		the tool will deploy both Visual Studio 2017 and 2019 remote debug binaries
+	* Support auto-upload of a title based on build success triggers received over the rest API
+	* Support for devkit registration UI prompts coming soon to the Steam client
+	* Cleanup: unify how the Steam client gets restarted, via the SDDM restart only now
+
+2021-07-22 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210722.0
+	* Add a status reading of graphics session and Steam client state
+	* Refactor side-loaded Steam client management
+	* Add support for graphics session gamescope/plasma toggle
+
+2021-07-15 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210715.0
+	* Improve filter and command line defaults for side loaded steam client support
+
+2021-07-09 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210709.0
+	* Improve perf tracing support for GPU captures
+
+2021-07-05 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210705.0
+	* Add support for Radeon GPU Profiler captures
+	* WIP to support perf event tracing alongside the GPU capture
+	* Add screenshot support
+	* Add a flag to control remote debug of Steam Play titles
+	* Improve terminal selection for remote SSH
+
+2021-06-10 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20211006.2
+	* Fix reports of "Could not create directory '/home/<user>/.ssh'" in the Windows version
+
+2021-05-04 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Improve 'Upload Title' panel with save/restore of configs
+
+2021-01-22 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210122.0
+	* Add support for a 'Steam Play' flag
+
+2021-01-19 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20210119.0
+	* Add a cli/gui support for opening a ssh shell to a registered devkit
+	* Update pyimgui to v1.79 branch (https://github.com/swistakm/pyimgui/pull/192)
+
+2020-12-02 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20201202.0
+	* Ignore proxy environment variables: fixes various 'kit not responding' situations.
+	* Bundle a modified zeroconf module: fixes zeroconf spam on Windows
+	* Reduced GL requirements: fixes the gui to work in an ubuntu 20 Hyper-V VM
+	* Fix bad UX of the various tool windows and their toolbar buttons
+	* Fix auto-resize and general behavior of modal dialogs
+	* Switch modal dialogs and console window to selectable text
+	* Improve error reporting of devkit registration
+	* Disable toolbar buttons that require an active devkit when no kit is selected
+	* Fix Windows version only showing warning and higher log messages in console
+	* Display the IP for all devkits
+	* Support adding a devkit by IP address when not found via multicast DNS
+
+	* Known issues:
+	** Slow tasks running under the 'please wait' modal dialog can't be aborted.
+	workaround: to abort a lengthy title upload, kill rsync.exe via task manager.
+	** If commands fail on the devkit side, the error reporting is unclear and difficult to diagnose.
+	** The sync logs tool window is not very usable.
+	** The kits window and UX for operations on kits still needs improvement.
+	** No persistence for kits added by address between runs.

@@ -1,0 +1,2 @@
+*.sh text eol=lf
+/build-aux/git-version-gen text eol=lf

@@ -1,0 +1,20 @@
+PySDL2
+PyOpenGL
+signalslot
+ifaddr
+appdirs
+bcrypt
+cffi
+cryptography
+# Use 'pip install -r requirements.txt' for these sys_platform statements to be honored, pipenv ignores them
+cx-Freeze; sys_platform == 'win32'
+shiv; sys_platform == 'linux'
+# used by the packaging script on linux
+pipenv; sys_platform == 'linux'
+idna
+netifaces
+paramiko
+pycparser
+PyNaCl
+six
+# imgui: not listed here, install the matching version from pyimgui-wheels/

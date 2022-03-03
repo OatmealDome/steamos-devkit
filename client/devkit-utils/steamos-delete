@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import logging
+import argparse
+import subprocess
+
+import devkit_utils.resolve
+
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+DEVKIT_TOOL_FOLDER = os.path.expanduser('~/devkit-game')
+RESTART_SDDM = '/usr/bin/steamos-polkit-helpers/steamos-restart-sddm'
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', required=False, action='store_true')
+    parser.add_argument('--delete-title', required=False, action='store', help='Delete a devkit title by name')
+    parser.add_argument('--delete-all-titles', required=False, action='store_true', default=False, help='Delete all devkit titles uploaded')
+    parser.add_argument('--reset-steam-client', required=False, action='store_true', default=False, help='Reset Steam client and delete all local Steam content')
+    conf = parser.parse_args()
+
+    if conf.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    if conf.delete_all_titles:
+        subprocess.check_call('rm -rf ~/devkit-game/*', shell=True)
+    elif conf.delete_title:
+        gamepath = os.path.expanduser( os.path.join( '~/devkit-game', conf.delete_title ) )
+        if not os.path.isdir(gamepath):
+            print(f'Not found: {gamepath}')
+            sys.exit(1)
+        subprocess.check_call(f'rm -r {gamepath}', shell=True)
+
+    # synchronize the Steam client's view of the devkit games with the on disk state
+    try:
+        devkit_utils.resolve.resolve_shortcuts()
+    except Exception as e:
+        logger.warning(f'Steam client sync of devkit games failed: {e}')
+
+    if conf.reset_steam_client:
+        # first make sure any side loaded trampoline has been deleted
+        devkit_steam_trampoline_path = os.path.join(DEVKIT_TOOL_FOLDER, 'devkit-steam')
+        if os.path.exists(devkit_steam_trampoline_path):
+            os.unlink(devkit_steam_trampoline_path)
+
+        # wipe the local Steam install
+        subprocess.check_call(f'rm -rf ~/.local/share/Steam', shell=True)
+
+        # restart SDDM, which will initiate a reinstall of Steam from the OS client
+        if os.path.exists(RESTART_SDDM):
+            subprocess.check_call(RESTART_SDDM)
+        else:
+            # TODO: remove passwordless sudo assumptions
+            subprocess.check_call(f'sudo systemctl restart sddm', shell=True)

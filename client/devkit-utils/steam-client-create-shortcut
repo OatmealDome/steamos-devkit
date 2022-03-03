@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+import os
+import logging
+import argparse
+import json
+import platform
+import tempfile
+from urllib.parse import quote_plus as urllib_quote_plus
+
+import devkit_utils
+
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+logger = logging.getLogger()
+
+DEVKIT_TOOL_FOLDER = os.path.expanduser('~/devkit-game')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', required=False, action='store_true')
+    parser.add_argument('--parms', required=True, action='store')
+    conf = parser.parse_args()
+
+    if conf.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    parms = json.loads(conf.parms)
+    gameid = parms['gameid']
+    directory = parms['directory']
+    assert os.path.isdir(directory)
+
+    logger.info(f'Updating command line and runtime settings for {gameid} on {platform.node()}')
+    devkit_utils.save_argv(gameid, parms['argv'])
+    devkit_utils.save_settings(gameid, parms)
+
+    ret = {}
+
+    try:
+        devkit_utils.validate_steam_client()
+    except devkit_utils.SteamClientNotRunningException as e:
+        skipping = 'The Steam client is not running. Registration did not complete.'
+        logger.warning(skipping)
+        ret['error'] = skipping
+    else:
+        with tempfile.TemporaryDirectory(prefix='create-shortcut') as tempdir:
+            logger.info(f'Registering Devkit Game {gameid} with Steam Client')
+            response = os.path.join(tempdir, 'registered')
+            cmd = 'create-shortcut?response={}&gameid={}'.format(
+                urllib_quote_plus(response),
+                gameid,
+            )
+            devkit_utils.execute_steam_client_command(cmd)
+            try:
+                with devkit_utils.wait_on_file_response(response) as success_response:
+                    logger.debug(success_response)
+                    ret['success'] = success_response
+            except devkit_utils.SteamResponse_Timeout:
+                ret['error'] = 'timeout - Steam client did not respond to registration request'
+            except devkit_utils.SteamResponse_Error as e:
+                ret['error'] = e.error_response
+
+    # response gets written out to stdout
+    print(json.dumps(ret))

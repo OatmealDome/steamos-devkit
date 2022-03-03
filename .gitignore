@@ -1,0 +1,6 @@
+*~
+client/setup.py
+client/imgui.ini
+__pycache__
+build
+dist
