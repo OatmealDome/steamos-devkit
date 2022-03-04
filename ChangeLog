@@ -1,3 +1,10 @@
+2022-03-04 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220304.0
+	* Add a missing script that was breaking the set password functionality
+	* Fix file browsing feature and remove obsolete hardcoded password
+	* Improve error handling and diagnostic for interactive shells used for remote shell and setting user password
+
 2022-03-03 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220303.0
