@@ -104,7 +104,6 @@ else:
         )
     )
 
-FOXNET_REGISTER = 'http://foxnet.valve.org/register.sh'
 RESTART_SDDM = '/usr/bin/steamos-polkit-helpers/steamos-restart-sddm'
 REBOOT_NOW = '/usr/bin/steamos-polkit-helpers/steamos-reboot-now'
 
@@ -1530,33 +1529,6 @@ def delete_title(args):
     if exit_status != 0:
         raise Exception(out_text)
     return out_text
-
-def register_foxnet(devkit):
-    # Pull the registration script
-    result = urllib.request.urlopen(FOXNET_REGISTER)
-    register_script = result.read()
-    logger.info(register_script)
-    # Write as binary to ensure unix line endings
-    register_script_fd, register_script_path = tempfile.mkstemp(prefix='register.sh', text=False)
-    os.write(register_script_fd, register_script)
-    os.fsync(register_script_fd)
-    # Start hiding this uglyness inside the module rather than deal with it in higher level gui code
-    class ResolveMachineArgs:
-        def __init__(self, devkit):
-            self.machine, self.machine_name_type = devkit.machine_command_args
-            self.login = None
-    (ssh, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
-    sftp = ssh.open_sftp()
-    sftp.put(register_script_path, '/tmp/register.sh')
-    os.close(register_script_fd)
-    _simple_ssh(ssh, '/bin/bash /tmp/register.sh', check_status=True)
-    # Trigger an immediate reboot
-    logger.info('Rebooting the kit to finish the configuration...')
-    # TODO: re-enable check_status
-    (_, _, exit_status) = _simple_ssh(ssh, REBOOT_NOW, check_status=False)
-    if exit_status != 0:
-        # TODO: remove passwordless sudo assumptions
-        _simple_ssh(ssh, 'sudo shutdown -r now')
 
 def simple_command(devkit, cmd):
     class ResolveMachineArgs:
