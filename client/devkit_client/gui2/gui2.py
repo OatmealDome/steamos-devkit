@@ -68,14 +68,6 @@ def imgui_calc_text_size(text):
     return (max_char*CHARACTER_WIDTH, len(lines)*CHARACTER_HEIGHT)
 
 
-class RemoteShellArgs:
-    def __init__(self, devkit):
-        self.machine, self.machine_name_type = devkit.machine_command_args
-        self.http_port = devkit.http_port
-        self.login = None
-        self.open_terminal = True
-
-
 class DevkitCommands:
     '''Wrap an async API around devkit command execution via the cli modules.
     This is very crufty because reasons. Could be massively simplified now.
@@ -289,7 +281,7 @@ class DevkitCommands:
         return self.executor.submit(self._sync_logs, devkit, logs_folder)
 
     def _open_remote_shell(self, devkit):
-        remote_shell_args = RemoteShellArgs(devkit)
+        remote_shell_args = devkit_client.RemoteShellArgs(devkit)
         devkit_client.remote_shell(remote_shell_args)
         return True
 
@@ -534,7 +526,7 @@ class DevkitCommands:
         return self.executor.submit(self._browse_files, *args)
 
     def _set_password(self, devkit):
-        remote_shell_args = RemoteShellArgs(devkit)
+        remote_shell_args = devkit_client.RemoteShellArgs(devkit)
         return devkit_client.set_password(remote_shell_args)
 
     def set_password(self, *args):

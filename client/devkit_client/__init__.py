@@ -119,6 +119,20 @@ if platform.system() == 'Windows':
 g_remote_debuggers = None
 g_external_tools = None
 
+
+class ResolveMachineArgs:
+    def __init__(self, devkit):
+        self.machine, self.machine_name_type = devkit.machine_command_args
+        self.login = None
+
+
+class RemoteShellArgs(ResolveMachineArgs):
+    def __init__(self, devkit):
+        super().__init__(devkit)
+        self.http_port = devkit.http_port
+        self.open_terminal = True
+
+
 @dataclass
 class RemoteDebugger:
     directory: str
@@ -1531,10 +1545,6 @@ def delete_title(args):
     return out_text
 
 def simple_command(devkit, cmd):
-    class ResolveMachineArgs:
-        def __init__(self, devkit):
-            self.machine, self.machine_name_type = devkit.machine_command_args
-            self.login = None
     (ssh, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
     if type(cmd) is list:
         cmd = shlex.join(cmd)
@@ -1542,10 +1552,6 @@ def simple_command(devkit, cmd):
 
 def sync_perf_logs(devkit, host_folder):
     os.makedirs(host_folder, exist_ok=True)
-    class ResolveMachineArgs:
-        def __init__(self, devkit):
-            self.machine, self.machine_name_type = devkit.machine_command_args
-            self.login = None
     (ssh, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
     client.rsync_transfer(
         host_folder,
