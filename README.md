@@ -38,6 +38,8 @@ Next, prepare a python virtualenv with all the necessary dependencies. This step
 - setup: `python -m venv C:\steamos-devkit`
 - activate: `.\Scripts\Activate.ps1`
 
+    If you get an `UnauthorizedAccess` error due to [execution policies](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies), run the following command first: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`
+
 Start by updating base tools:
 
 - `python -m pip install --upgrade pip`

@@ -1210,7 +1210,7 @@ Start-Sleep -Seconds 3
 """
                 batch.write(cmd)
                 batch.flush()
-                ssh_command = ['powershell.exe', batch.name]
+                ssh_command = ['powershell.exe', '-ExecutionPolicy', 'Bypass', batch.name]
             # ensures we get a separate console when running out of a shell with pipenv
             creationflags=subprocess.CREATE_NEW_CONSOLE
         else:
