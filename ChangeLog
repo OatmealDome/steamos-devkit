@@ -1,3 +1,8 @@
+2022-03-09 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220309.1
+	* Use the correct execution policy to fix a bug when setting the user password or opening remote shell on Windows
+
 2022-03-04 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220304.0
