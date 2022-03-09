@@ -18,6 +18,8 @@ DEVKIT_TOOL_FOLDER = os.path.expanduser('~/devkit-game')
 
 WIRELESS_DISABLE_POWER_MANAGEMENT = '/usr/bin/steamos-polkit-helpers/steamos-disable-wireless-power-management'
 
+FOXNET_HOSTNAME = '/var/local/foxnet-hostname.txt'
+
 class SteamStatus(enum.Enum):
     NOT_RUNNING = 0
     ERROR = 1
@@ -281,6 +283,10 @@ if __name__ == '__main__':
     ret = subprocess.run('/usr/bin/nmcli connection show --active foxnet > /dev/null', shell=True)
     has_foxnet_connectivity = ( ret.returncode == 0 )
 
+    foxnet_hostname = None
+    if os.path.exists(FOXNET_HOSTNAME):
+        foxnet_hostname = open(FOXNET_HOSTNAME).read().strip()
+
     _user_password_is_set = user_password_is_set()
 
     if conf.json:
@@ -301,6 +307,7 @@ if __name__ == '__main__':
             'steam_default_args': steam_default_args(),
             'steam_current_args': steam_current_args(), # None, or a list
             'has_foxnet_connectivity': has_foxnet_connectivity,
+            'foxnet_hostname': foxnet_hostname,
             'user_password_is_set': _user_password_is_set,
         }
         json.dump(ret, sys.stdout, sort_keys=True, indent=4)
@@ -317,4 +324,5 @@ if __name__ == '__main__':
         logger.info(f"Side loaded client     : {'available' if has_side_loaded_client else 'not installed'}")
         logger.info(f'OS client arguments    : {steam_default_args()!r}')
         logger.info(f"Foxnet backend         : {'yes' if has_foxnet_connectivity else 'no'}")
+        logger.info(f"Foxnet hostname        : {foxnet_hostname}")
         logger.info(f"User password is set   : {'yes' if _user_password_is_set else 'no'}")
