@@ -1079,7 +1079,9 @@ class DevkitsWindow(ToolWindow):
         while not self.zc_listener.devkit_events.empty():
             op, service_name = self.zc_listener.devkit_events.get()
             if op == 'add':
-                assert service_name not in self.devkits
+                if service_name in self.devkits:
+                    # observed happening on rare occasion, used to be an assert taking down the whole client
+                    logger.warning(f'devkit with service name {service_name} already exists - replacing entry')
                 devkit = Devkit(self.devkit_commands, self.settings, zc_listener=self.zc_listener, service_name=service_name)
                 devkit.setup()
                 self.devkits[devkit.name] = devkit
