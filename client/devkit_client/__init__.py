@@ -1168,9 +1168,9 @@ def sync_logs(args):
     )
 
 
-# Open a remote shell, or execute a command interactively.
-# This is handy for processes that will have sudo password prompts, for instance
-def remote_shell(args, commands=None):
+# Open a remote shell, or execute a command interactively against a device
+# This is handy for privileged operations (sudo) and remote CLI interactions
+def remote_shell(args, remote_commands=None):
     client = DevkitClient()
     logger.info(
         "Open remote shell to %s", args.machine
@@ -1186,29 +1186,32 @@ def remote_shell(args, commands=None):
         machine.login,
         machine.address
     )
-    if commands is not None:
-        assert type(commands) is list
-        ssh_command += commands
+    if remote_commands is not None:
+        assert type(remote_commands) is list
+        ssh_command += remote_commands
+    run_in_terminal(ssh_command)
+
+
+def run_in_terminal(commands):
     cwd = os.getcwd()
     creationflags=0
-    if args.open_terminal:
-        if platform.system() == 'Windows':
-            # After a bunch of iteration, writing a ps1 script and running it from the ssh.exe directory seems the most reliable
-            # trying to pass all command line parameters with a direct powershell.exe invocation runs into a nightmare of path escaping business
-            # this also enables us to provide better error handling and diagnostics
-            ssh_path = ssh_command[0]
-            cwd = os.path.dirname(ssh_path)
-            ssh_exe = rf'.\{os.path.basename(ssh_path)}'
-            with tempfile.NamedTemporaryFile(
-                mode='wt',
-                prefix='devkit-remote-shell',
-                suffix='.ps1',
-                delete=False, # we just leak those .. whatever
-            ) as batch:
-                logging.info(f'Writing and executing {batch.name}:')
-                args_list = ','.join(f'"{c}"' for c in ssh_command[1:])
-                # NOTE: exit codes from the remote command script/shell are not propagated back out .. maybe force a pause when debug is on?
-                cmd = f"""
+    if platform.system() == 'Windows':
+        # After a bunch of iteration, writing a ps1 script and running it from the ssh.exe directory seems the most reliable
+        # trying to pass all command line parameters with a direct powershell.exe invocation runs into a nightmare of path escaping business
+        # this also enables us to provide better error handling and diagnostics
+        ssh_path = commands[0]
+        cwd = os.path.dirname(ssh_path)
+        ssh_exe = rf'.\{os.path.basename(ssh_path)}'
+        with tempfile.NamedTemporaryFile(
+            mode='wt',
+            prefix='devkit-remote-shell',
+            suffix='.ps1',
+            delete=False, # we just leak those .. whatever
+        ) as batch:
+            logging.info(f'Writing and executing {batch.name}:')
+            args_list = ','.join(f'"{c}"' for c in commands[1:])
+            # NOTE: exit codes from the remote command script/shell are not propagated back out .. maybe force a pause when debug is on?
+            cmd = f"""
 # All errors are Terminating errors
 $ErrorActionPreference = 'Stop'
 try {{
@@ -1221,33 +1224,34 @@ try {{
 # Bit of a catch-all since we don't have good error propagation, maybe remove once this proves reliable?
 Start-Sleep -Seconds 3
 """
-                batch.write(cmd)
-                batch.flush()
-                ssh_command = ['powershell.exe', '-ExecutionPolicy', 'Bypass', batch.name]
-            # ensures we get a separate console when running out of a shell with pipenv
-            creationflags=subprocess.CREATE_NEW_CONSOLE
-        else:
-            matched = False
-            for terminal_prefix in (
-                ['konsole', '-e'],
-                ['gnome-terminal', '--'],
-                ['xterm', '-e'],
-            ):
-                if shutil.which(terminal_prefix[0]) is not None:
-                    ssh_command = terminal_prefix + ssh_command
-                    logger.info(f'Open terminal: {ssh_command!r}')
-                    matched = True
-                    break
-            if not matched:
-                raise Exception('Could not find a suitable terminal to run command!')
-    logger.info(f'Run command in {cwd!r}: {" ".join(ssh_command)}')
+            batch.write(cmd)
+            batch.flush()
+            commands = ['powershell.exe', '-ExecutionPolicy', 'Bypass', batch.name]
+        # ensures we get a separate console when running out of a shell with pipenv
+        creationflags=subprocess.CREATE_NEW_CONSOLE
+    else:
+        matched = False
+        for terminal_prefix in (
+            ['konsole', '-e'],
+            ['gnome-terminal', '--'],
+            ['xterm', '-e'],
+        ):
+            if shutil.which(terminal_prefix[0]) is not None:
+                commands = terminal_prefix + commands
+                logger.info(f'Open terminal: {commands!r}')
+                matched = True
+                break
+        if not matched:
+            raise Exception('Could not find a suitable terminal to run command!')
+    logger.info(f'Run in terminal, cwd {cwd!r}: {" ".join(commands)}')
     p = subprocess.Popen(
-        ssh_command,
+        commands,
         creationflags=creationflags,
         cwd=cwd,
     )
     p.communicate()
-    logger.info(f'Command exited with code {p.returncode}: {" ".join(ssh_command)}')
+    logger.info(f'Command exited with code {p.returncode}: {" ".join(commands)}')
+
 
 def set_password(args):
     return remote_shell(args, ['~/devkit-utils/steamos-set-password.sh'])
