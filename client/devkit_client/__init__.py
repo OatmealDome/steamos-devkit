@@ -1189,9 +1189,9 @@ def remote_shell(args, remote_commands=None):
     if remote_commands is not None:
         assert type(remote_commands) is list
         ssh_command += remote_commands
-    run_in_terminal(ssh_command)
+    return run_in_terminal(ssh_command)
 
-
+# Returns the child process
 def run_in_terminal(commands):
     cwd = os.getcwd()
     creationflags=0
@@ -1249,8 +1249,7 @@ Start-Sleep -Seconds 3
         creationflags=creationflags,
         cwd=cwd,
     )
-    p.communicate()
-    logger.info(f'Command exited with code {p.returncode}: {" ".join(commands)}')
+    return p
 
 
 def set_password(args):

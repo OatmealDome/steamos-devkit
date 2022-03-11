@@ -282,8 +282,8 @@ class DevkitCommands:
 
     def _open_remote_shell(self, devkit):
         remote_shell_args = devkit_client.RemoteShellArgs(devkit)
-        devkit_client.remote_shell(remote_shell_args)
-        return True
+        p = devkit_client.remote_shell(remote_shell_args)
+        return p
 
     def open_remote_shell(self, devkit):
         return self.executor.submit(self._open_remote_shell, devkit)
@@ -527,7 +527,10 @@ class DevkitCommands:
 
     def _set_password(self, devkit):
         remote_shell_args = devkit_client.RemoteShellArgs(devkit)
-        return devkit_client.set_password(remote_shell_args)
+        p = devkit_client.set_password(remote_shell_args)
+        # wait under the modal so the UI can trigger a refresh afterwards
+        p.communicate()
+        logger.info(f'set_password child process exited with code {p.returncode}')
 
     def set_password(self, *args):
         return self.executor.submit(self._set_password, *args)
@@ -2144,7 +2147,8 @@ class RemoteShell:
 
     def on_open_remote_shell_done(self, f):
         try:
-            f.result()
+            p = f.result()
+            logger.info(f'Remote shell started, pid {p.pid}')
         except Exception as e:
             devkit_client.log_exception(e)
 
