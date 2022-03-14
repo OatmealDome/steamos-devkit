@@ -281,7 +281,7 @@ class DevkitCommands:
         return self.executor.submit(self._sync_logs, devkit, logs_folder)
 
     def _open_remote_shell(self, devkit):
-        remote_shell_args = devkit_client.RemoteShellArgs(devkit)
+        remote_shell_args = devkit_client.ResolveMachineArgs(devkit)
         p = devkit_client.remote_shell(remote_shell_args)
         return p
 
@@ -526,7 +526,7 @@ class DevkitCommands:
         return self.executor.submit(self._browse_files, *args)
 
     def _set_password(self, devkit):
-        remote_shell_args = devkit_client.RemoteShellArgs(devkit)
+        remote_shell_args = devkit_client.ResolveMachineArgs(devkit)
         p = devkit_client.set_password(remote_shell_args)
         # wait under the modal so the UI can trigger a refresh afterwards
         p.communicate()

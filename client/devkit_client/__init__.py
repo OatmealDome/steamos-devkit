@@ -124,13 +124,7 @@ class ResolveMachineArgs:
     def __init__(self, devkit):
         self.machine, self.machine_name_type = devkit.machine_command_args
         self.login = None
-
-
-class RemoteShellArgs(ResolveMachineArgs):
-    def __init__(self, devkit):
-        super().__init__(devkit)
         self.http_port = devkit.http_port
-        self.open_terminal = True
 
 
 @dataclass
