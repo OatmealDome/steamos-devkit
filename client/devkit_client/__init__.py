@@ -454,7 +454,7 @@ def ensure_devkit_key():
         # enforce/fix file permissions
         os.chmod(key_path, 0o400)
         os.chmod(pubkey_path, 0o400)
-    return (key, key_path)
+    return (key, key_path, pubkey_path)
 
 
 class DevkitClient(object):
@@ -515,7 +515,7 @@ class DevkitClient(object):
         ):
         logger.debug('%s@%s: %s', username, ipaddress, command)
         ssh = paramiko.SSHClient()
-        key, key_path = ensure_devkit_key()
+        key, key_path, _ = ensure_devkit_key()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         logger.debug(f'Connecting to {username}@{ipaddress} with private key {key_path!r}')
@@ -846,7 +846,7 @@ def resolve_machine(name, devkit1=(), login=None, need_login=True,
 MAGIC_PHRASE = '900b919520e4cf601998a71eec318fec'
 
 def register(args):
-    key, _ = ensure_devkit_key()
+    key, _, _ = ensure_devkit_key()
 
     machine = resolve_machine(
         args.machine,
@@ -1297,7 +1297,7 @@ def _open_ssh_for_args_all(args, machine=None):
             http_port=getattr(args, 'http_port', DEFAULT_DEVKIT_SERVICE_HTTP),
         )
     ssh = paramiko.SSHClient()
-    key, key_path = ensure_devkit_key()
+    key, key_path, _ = ensure_devkit_key()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     logger.debug(f'Connecting to {machine.login}@{machine.address} with private key {key_path!r}')

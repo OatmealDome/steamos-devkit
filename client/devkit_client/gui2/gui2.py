@@ -1131,16 +1131,21 @@ class DevkitsWindow(ToolWindow):
             imgui.end()
             return
 
-        imgui.text('Add devkit by IP:')
+        imgui.text('Connect to Steam Deck by IP:')
         imgui.same_line()
+        imgui.set_cursor_pos_x(30*CHARACTER_WIDTH)
         imgui.push_item_width(20*CHARACTER_WIDTH)
-        changed, s = imgui.input_text('##add_by_ip', self.add_by_ip_text, 128, imgui.INPUT_TEXT_ENTER_RETURNS_TRUE)
+        changed, s = imgui.input_text('##add_by_ip', self.add_by_ip_text, 128)
         if changed:
             self.add_by_ip_text = s
-            logger.info('Adding devkit at address %r', self.add_by_ip_text)
-            devkit = Devkit(self.devkit_commands, self.settings, address=self.add_by_ip_text)
-            devkit.setup()
-            self.devkits[devkit.name] = devkit
+        imgui.same_line()
+        if imgui.button('Connect##byip'):
+            if len(self.add_by_ip_text) > 0:
+                self.add_by_ip_text = s
+                logger.info(f'Connecting to Deck by IP {self.add_by_ip_text}')
+                devkit = Devkit(self.devkit_commands, self.settings, address=self.add_by_ip_text)
+                devkit.setup()
+                self.devkits[devkit.name] = devkit
 
         # list non registered devkits (discovered, registering, failed etc.)
         other_kits = [k for k in self.devkits.values() if k not in online_kits]
@@ -2915,7 +2920,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
             self._respond(ret)
             return
         if self.path == '/ssh_key_path':
-            key, key_path = devkit_client.ensure_devkit_key()
+            _, key_path, _ = devkit_client.ensure_devkit_key()
             self._respond({'key_path':key_path})
             return
         if self.path == '/title_settings':
