@@ -1,3 +1,8 @@
+2022-03-18 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Add safety checks and small utility for EV2/DV devices that have not updated to day one OS yet (27.3)
+	* Several refactors to cleanup and improve support for Valve-only internal features
+
 2022-03-09 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220309.1
