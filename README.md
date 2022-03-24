@@ -11,7 +11,7 @@ Install misc utilities:
 
 Install Python 3.10:
 
-- `choco install python --version 3.10.2`
+- `choco install python --version 3.10.3`
 
 Python will install to C:\Python30. Restart the shell to pickup it up.
 
