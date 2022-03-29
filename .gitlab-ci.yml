@@ -1,0 +1,17 @@
+variables:
+  GIT_STRATEGY: clone
+
+stages:
+  - build
+
+build-linux:
+  stage: build
+  tags:
+    - linux
+  script: ./setup/gitlab-linux.py
+
+build-windows:
+  stage: build
+  tags:
+    - windows
+  script: ./setup/gitlab-windows.py
