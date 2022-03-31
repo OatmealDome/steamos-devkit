@@ -1182,8 +1182,9 @@ class DevkitsWindow(ToolWindow):
                             if kit.http_connectivity:
                                 # only obtained if http connectivity was confirmed
                                 settings = kit.service_properties['settings']
-                                # old services will not report the flag and have sshd running by default
-                                running_sshd = ( settings.get('sshd', '1') == '1' )
+                                # assume all devices will either not report a sshd flag, or report a live/up to date one
+                                # also for historical reasons this flag reports as a string
+                                running_sshd = ( settings.get('sshd', '0') == '1' )
                             # a device that was never registered as a devkit will not have sshd running yet,
                             # in that case we do not say anything about limited connectivity to avoid confusion
                             if running_sshd:
