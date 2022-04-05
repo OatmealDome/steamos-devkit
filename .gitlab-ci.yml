@@ -3,15 +3,32 @@ variables:
 
 stages:
   - build
+  - deploy
 
 build-linux:
   stage: build
   tags:
     - linux
   script: ./setup/gitlab-linux.py
+  artifacts:
+    paths:
+      - artifacts/
 
 build-windows:
   stage: build
   tags:
     - windows
   script: ./setup/gitlab-windows.py
+  artifacts:
+    paths:
+      - artifacts/
+
+deploy:
+  stage: deploy
+  when: manual
+  needs:
+    - build-linux
+    - build-windows
+  tags:
+    - linux
+  script: ./setup/gitlab-deploy.py

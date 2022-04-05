@@ -7,6 +7,7 @@ import subprocess
 import shutil
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PACKAGE_FILE = 'devkit-gui-win64.zip'
 
 assert sys.platform == 'win32'
 assert sys.prefix == sys.base_prefix    # executed at build VM OS level
@@ -25,3 +26,8 @@ if __name__ == '__main__':
     call(f'{pip} install -r requirements.txt')
     call(rf'{pip} install .\pyimgui-wheels\imgui-2.0.0-cp310-cp310-win_amd64.whl')
     call(rf'{interpreter} .\setup\package-windows.py')
+    if not os.path.exists(PACKAGE_FILE):
+        raise Exception(f'{PACKAGE_FILE} not found')
+    os.makedirs('artifacts', exist_ok=True)
+    # copy to an artifacts/ file, consistent with the linux build
+    shutil.copyfile(PACKAGE_FILE, os.path.join('artifacts', PACKAGE_FILE))
