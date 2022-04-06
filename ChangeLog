@@ -1,3 +1,8 @@
+2022-04-06 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220406.0
+	* Fix the UI incorrectly reporting about limited connectivity when sshd hasn't been enabled on the kit yet.
+
 2022-03-18 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Add safety checks and small utility for EV2/DV devices that have not updated to day one OS yet (27.3)
