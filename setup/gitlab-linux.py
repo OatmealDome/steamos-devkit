@@ -28,10 +28,16 @@ if __name__ == '__main__':
         # using pipenv wasn't the best idea for CI, it leaves it's files in ~/.local/share/virtualenvs/,
         # and we need to wipe that too to try our best to be reproductible and idempotent
         if os.path.exists(build_dir):
-            venv_dir = subprocess.check_output(f'{interpreter} -m pipenv --python 3.{python_minor} --venv', cwd=build_dir, shell=True, universal_newlines=True).strip('\n')
-            if os.path.exists(venv_dir):
-                print(f'rmtree {venv_dir}')
-                shutil.rmtree(venv_dir)
+            cmd = f'{interpreter} -m pipenv --python 3.{python_minor} --venv'
+            print(f'Check if {build_dir} has a leftover virtualenv')
+            cp = subprocess.run(cmd, cwd=build_dir, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, universal_newlines=True)
+            if cp.returncode == 0:
+                venv_dir = cp.stdout.strip('\n')
+                if os.path.exists(venv_dir):
+                    print(f'rmtree {venv_dir}')
+                    shutil.rmtree(venv_dir)
+            else:
+                print(f'no virtualenv for {build_dir} to delete')
             print(f'rmtree {build_dir}')
             shutil.rmtree(build_dir)
         print(f'copytree {ROOT_DIR} -> {build_dir}')
