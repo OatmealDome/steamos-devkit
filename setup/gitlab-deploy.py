@@ -22,11 +22,14 @@ if __name__ == '__main__':
 
     src_dir = os.path.join(ROOT_DIR, 'artifacts')
     dst_dir = os.path.join(STEAMOS_DEVKIT_CI_UPLOAD_PATH, version_tag)
-    latest_dir = os.path.join(STEAMOS_DEVKIT_CI_UPLOAD_PATH, 'latest')
+    latest = 'latest'
+    if version_tag.find('internal') != -1:
+        latest = 'latest-internal'
+    latest_dir = os.path.join(STEAMOS_DEVKIT_CI_UPLOAD_PATH, latest)
     cmd = f'rsync -rv -e "ssh -o StrictHostKeyChecking=no -i {STEAMOS_DEVKIT_CI_UPLOAD_SSH_PRIVATE_KEY_FILE}" {src_dir}/ {STEAMOS_DEVKIT_CI_UPLOAD_USER}@{STEAMOS_DEVKIT_CI_UPLOAD_HOST}:{dst_dir}'
     print(cmd)
     subprocess.check_call(cmd, shell=True)
 
-    cmd = f'ssh -o StrictHostKeyChecking=no -i {STEAMOS_DEVKIT_CI_UPLOAD_SSH_PRIVATE_KEY_FILE} {STEAMOS_DEVKIT_CI_UPLOAD_USER}@{STEAMOS_DEVKIT_CI_UPLOAD_HOST} "cd {STEAMOS_DEVKIT_CI_UPLOAD_PATH} ; ln -f -s {version_tag} {latest} ; ls -1al {STEAMOS_DEVKIT_CI_UPLOAD_PATH}"'
+    cmd = f'ssh -o StrictHostKeyChecking=no -i {STEAMOS_DEVKIT_CI_UPLOAD_SSH_PRIVATE_KEY_FILE} {STEAMOS_DEVKIT_CI_UPLOAD_USER}@{STEAMOS_DEVKIT_CI_UPLOAD_HOST} "cd {STEAMOS_DEVKIT_CI_UPLOAD_PATH} ; ln -f -s {version_tag} {latest}"'
     print(cmd)
     subprocess.check_call(cmd, shell=True)
