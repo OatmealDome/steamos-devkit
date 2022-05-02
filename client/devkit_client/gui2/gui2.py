@@ -2038,6 +2038,8 @@ class UpdateTitle(ToolWindow):
         auto_upload_pref = f'UpdateTitle.{name}.auto_upload'
         if not ( auto_upload_pref in self.settings ):
             raise Exception(f'No such title: {name}')
+        if self.devkits_window.selected_devkit is None:
+            raise Exception('No devkit selected')
         if not self.settings.get(f'UpdateTitle.{name}.auto_upload', False):
             # title is not configured to do uploads
             logger.info(f'Received a build success notification for {name!r}. Auto upload is not enabled, stopping.')
