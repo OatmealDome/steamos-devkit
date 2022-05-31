@@ -11,7 +11,8 @@ Install misc utilities:
 
 Install Python 3.10:
 
-- `choco install python --version 3.10.3`
+# These options install into c:\Python310 for all users
+- `choco install python --version 3.10.3 --params "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\Python310'"`
 
 Python will install to C:\Python30. Restart the shell to pickup it up.
 
@@ -35,7 +36,9 @@ Install cygwin with needed packages:
 
 Next, prepare a python virtualenv with all the necessary dependencies. This step can be repeated in fresh clones of the repositories.
 
-- setup: `python -m venv C:\steamos-devkit`
+From your checkout of steamos-devkit:
+
+- setup: `python -m venv .`
 - activate: `.\Scripts\Activate.ps1`
 
     If you get an `UnauthorizedAccess` error due to [execution policies](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies), run the following command first: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`
