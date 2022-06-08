@@ -2354,7 +2354,7 @@ class PerfOverlay(SubTool):
 
 
 class GPUTrace(SubTool):
-    BUTTON_NAME = 'System trace'
+    BUTTON_NAME = 'System Trace'
     FILEPATH_KEY = 'GPUTrace.filepath.2'
     LAUNCH_KEY = 'GPUTrace.launch'
     GPUVIS_KEY = 'GPUTrace.gpuvis_path.3'
@@ -2426,7 +2426,7 @@ class GPUTrace(SubTool):
             self.modal_wait = ModalWait(
                 self.viewport,
                 self.toolbar,
-                f'Capturing System trace from {selected_devkit.name}',
+                f'Capturing system trace from {selected_devkit.name}',
                 task_future,
                 exit_on_success=True,
             )
