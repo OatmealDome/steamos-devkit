@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import logging
+import argparse
+import tempfile
+import urllib.parse
+
+import devkit_utils
+
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+logger = logging.getLogger()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('command')
+    parser.add_argument('args', nargs='*')
+    conf = parser.parse_args()
+
+    try:
+        devkit_utils.validate_steam_client()
+    except devkit_utils.SteamClientNotRunningException as e:
+        logger.error(repr(e))
+        sys.exit(-1)
+    else:
+        with tempfile.TemporaryDirectory(prefix='steam-devkit-rpc') as tempdir:
+            response = os.path.join(tempdir, 'steam-devkit-rpc')
+            cmd = f'{conf.command}?response={urllib.parse.quote_plus(response)}'
+            for arg in conf.args:
+                cmd += f'&{arg}'
+            devkit_utils.execute_steam_client_command(cmd)
+            try:
+                with devkit_utils.wait_on_file_response(response) as success_response:
+                    logger.info('success')
+                    sys.stdout.write(success_response)
+                    sys.exit(0)
+            except devkit_utils.SteamResponse_Timeout:
+                logger.error('timeout')
+            except devkit_utils.SteamResponse_Error as e:
+                logger.error('failed')
+                sys.stdout.write(e.error_response)
+                sys.exit(-1)
