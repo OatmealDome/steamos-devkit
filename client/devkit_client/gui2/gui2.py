@@ -2497,10 +2497,6 @@ class ControllerConfigs(SubTool):
             self.settings[self.GAMEID_KEY] = ''
 
     def devkits_window_draw(self, selected_devkit):
-        # gate on a recent enough Steam client - remove this eventually
-        if (selected_devkit.osclient_steam_version is not None) and (selected_devkit.osclient_steam_version < 1632434294):
-            return
-
         imgui.text(' appid:')
         imgui.same_line()
         imgui.set_next_item_width(16*CHARACTER_WIDTH)
