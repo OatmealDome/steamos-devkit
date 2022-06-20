@@ -559,7 +559,7 @@ class DevkitNoConnectivity(Exception):
 class Devkit:
     ADDED_BY_IP_KEY = 'Devkit.AddedByIP'
 
-    def __init__(self, devkit_commands, settings, zc_listener=None, service_name=None, address=None):
+    def __init__(self, devkit_commands, settings, zc_listener=None, service_name=None, address=None, port=devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP):
         self.devkit_commands = devkit_commands
         self.settings = settings
         # both set if added as a service (None otherwise)
@@ -585,7 +585,7 @@ class Devkit:
         if self.zc_listener:
             self._http_port = self.zc_listener.port_for_service(self.service_name)
         else:
-            self._http_port = devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP
+            self._http_port = port
 
     # returns a tri-state as well
     @property
@@ -611,7 +611,7 @@ class Devkit:
         # Add the IP address when appropriate
         if self.service_name is not None:
             return '{} ({})'.format(self.service_name, self.zc_listener.address_for_service(self.service_name))
-        return self.address
+        return '{}:{}'.format(self.address, self._http_port)
 
     @property
     def machine_command_args(self):
@@ -679,14 +679,15 @@ class Devkit:
         self.init_future.add_done_callback(self.on_init_done)
         if self.added_by_ip:
             ip_set = self.settings.get(self.ADDED_BY_IP_KEY, set())
-            ip_set.add(self.address)
+            if self.address in ip_set:
+                ip_set.remove(self.address)
+            ip_set.add((self.address, self.http_port))
             self.settings[self.ADDED_BY_IP_KEY] = ip_set
-            self.settings.save_settings()
 
     def forget_added_by_ip(self):
         assert self.added_by_ip
         ip_set = self.settings.get(self.ADDED_BY_IP_KEY, set())
-        ip_set.remove(self.address)
+        ip_set.remove((self.address, self.http_port))
         self.settings[self.ADDED_BY_IP_KEY] = ip_set
         self.settings.save_settings()
 
@@ -1015,6 +1016,7 @@ class DevkitsWindow(ToolWindow):
         self.modal_wait = None
         self.signal_selected_devkit = signalslot.Signal(args=['devkit'])
         self.add_by_ip_text = ''
+        self.add_by_ip_port = '{}'.format(devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP)
         self.steam_client_args = None
         # Hook into status updates to refresh the command line arguments
         self.devkit_commands.signal_steamos_status.connect(self.on_steamos_status)
@@ -1033,10 +1035,16 @@ class DevkitsWindow(ToolWindow):
         self.preferred_devkit_name = self.settings.get('DevkitsWindow.preferred_devkit_name', None)
         devkits_by_ip = self.settings.get(Devkit.ADDED_BY_IP_KEY, set())
         for address in devkits_by_ip:
-            logger.info(f'Attempt to initialize a devkit previously added by IP: {address}')
-            devkit = Devkit(self.devkit_commands, self.settings, address=address)
+            addr = address
+            port = devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP
+            if (isinstance(address, tuple)):
+                addr, port = address
+            logger.info(f'Attempt to initialize a devkit previously added by IP: {addr} with port {port}')
+            devkit = Devkit(self.devkit_commands, self.settings, address=addr, port=port)
             devkit.setup()
             self.devkits[devkit.name] = devkit
+        # Save in case any changes were made by above loop
+        self.settings.save_settings()
         self._valve_setup()
 
     def _valve_setup(self):
@@ -1139,11 +1147,22 @@ class DevkitsWindow(ToolWindow):
         if changed:
             self.add_by_ip_text = s
         imgui.same_line()
+        imgui.text('Port:')
+        imgui.same_line()
+        imgui.push_item_width(6*CHARACTER_WIDTH)
+        changed, p = imgui.input_text('##add_by_ip_port', self.add_by_ip_port, 6)
+        if changed:
+            self.add_by_ip_port = p
+        imgui.same_line()
         if imgui.button('Connect##byip'):
             if len(self.add_by_ip_text) > 0:
                 self.add_by_ip_text = s
-                logger.info(f'Connecting to Deck by IP {self.add_by_ip_text}')
-                devkit = Devkit(self.devkit_commands, self.settings, address=self.add_by_ip_text)
+                if len(self.add_by_ip_port) > 0:
+                    logger.info(f'Connecting to Deck by IP {self.add_by_ip_text} and port {self.add_by_ip_port}')
+                else:
+                    self.add_by_ip_port = devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP
+                    logger.info(f'Connecting to Deck by IP {self.add_by_ip_text} and default port {devkit_client.DEFAULT_DEVKIT_SERVICE_HTTP}')
+                devkit = Devkit(self.devkit_commands, self.settings, address=self.add_by_ip_text, port=int(self.add_by_ip_port))
                 devkit.setup()
                 self.devkits[devkit.name] = devkit
 
