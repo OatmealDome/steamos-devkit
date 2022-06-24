@@ -2779,6 +2779,7 @@ class ImGui_SDL2_Viewport:
 
     def report_versions(self):
         logger.info('Valve devkit client UI %s', devkit_client.__version__)
+        logger.info('Python %s', platform.python_version())
         logger.info('Using pyimgui %s', imgui.__version__)
         logger.info('Using imgui %s', imgui.get_version())
         version = sdl2.SDL_version()

@@ -96,7 +96,7 @@ REQUEST_TIMEOUT = 2
 
 # Root of the installation - do not use getcwd!
 if getattr(sys, 'frozen', False):
-    ROOT_DIR = os.path.dirname(sys.executable)
+    ROOT_DIR = os.path.dirname(os.path.abspath(sys.executable))
 else:
     ROOT_DIR = os.path.abspath(
         os.path.join(
@@ -594,8 +594,9 @@ class DevkitClient(object):
     ):
         '''Folder transfers. Either direction, controlled by the upload parm'''
 
+        assert os.path.exists(localdir)
         if sys.platform == 'win32':
-            localdir = self.native_to_cygwin_path(localdir)
+            self.test_cygpath(localdir)
 
         cmd = [
             self.rsync,
@@ -617,15 +618,17 @@ class DevkitClient(object):
         # NOTE: we force folder to folder here with the trailing /
         # makes the function easier to use but limits our ability to pull remote patterns..
         upload_cmd = [
-            '{}/'.format(localdir.rstrip('/')),
+            #'{}/'.format(localdir.rstrip('/')),
+            './',
             '{}@{}:{}/'.format(user, ipaddress, remotedir.rstrip('/')),
         ]
         if not transfer_to_remote:
             upload_cmd.reverse()
         cmd += upload_cmd
-        logger.info(shlex.join(cmd))
+        logger.info(f'Execute in {localdir!r}: {shlex.join(cmd)}')
         self.rsync_process = subprocess.Popen(
             cmd,
+            cwd=localdir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             creationflags=SUBPROCESS_CREATION_FLAGS,
@@ -642,18 +645,23 @@ class DevkitClient(object):
             raise subprocess.CalledProcessError(retcode, cmd)
         return retcode
 
-    def native_to_cygwin_path(self, path):
-        p = subprocess.Popen([
-            self.cygpath,
-            path,
-            ],
-            creationflags=SUBPROCESS_CREATION_FLAGS,
-            stdout=subprocess.PIPE
-        )
-
-        # return the stdout bit only the first line
-        output = str(p.communicate()[0], 'utf-8')
-        return output.split('\n')[0]
+    def test_cygpath(self, _path):
+        logger.info('DBG: testing cygpath.exe behavior, see https://cygwin.com/pipermail/cygwin/2022-June/251750.html')
+        wp = pathlib.WindowsPath(_path)
+        for i in range(1, len(wp.parts)+1):
+            cwp = pathlib.WindowsPath(*wp.parts[:i])
+            path = str(cwp)
+            cmd=[self.cygpath, path]
+            p = subprocess.Popen(
+                cmd,
+                creationflags=SUBPROCESS_CREATION_FLAGS,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            output = str(p.communicate()[0], 'utf-8')
+            s_cmd = ' '.join(cmd)
+            logger.info(f'DBG: {s_cmd!r}: {p.returncode} {output!r}')
+        #return output.split('\n')[0]
 
 
 class Machine:
