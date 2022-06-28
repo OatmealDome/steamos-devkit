@@ -30,6 +30,6 @@ if __name__ == '__main__':
     print(cmd)
     subprocess.check_call(cmd, shell=True)
 
-    cmd = f'ssh -o StrictHostKeyChecking=no -i {STEAMOS_DEVKIT_CI_UPLOAD_SSH_PRIVATE_KEY_FILE} {STEAMOS_DEVKIT_CI_UPLOAD_USER}@{STEAMOS_DEVKIT_CI_UPLOAD_HOST} "cd {STEAMOS_DEVKIT_CI_UPLOAD_PATH} ; ln -f -s {version_tag} {latest}"'
+    cmd = f'ssh -o StrictHostKeyChecking=no -i {STEAMOS_DEVKIT_CI_UPLOAD_SSH_PRIVATE_KEY_FILE} {STEAMOS_DEVKIT_CI_UPLOAD_USER}@{STEAMOS_DEVKIT_CI_UPLOAD_HOST} "cd {STEAMOS_DEVKIT_CI_UPLOAD_PATH} && rm -f {latest} && ln -s {version_tag} {latest}"'
     print(cmd)
     subprocess.check_call(cmd, shell=True)
