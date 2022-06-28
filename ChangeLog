@@ -1,3 +1,9 @@
+2022-06-28 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220628.0
+	* Fix registration and title upload errors on some systems due to cygpath issues.
+	* Allow custom port to the devkit service.
+
 2022-04-06 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220406.0
