@@ -1259,7 +1259,7 @@ class DevkitsWindow(ToolWindow):
                     description += f' Jupiter OS: {kit.os_version}'
                 else:
                     description += f' OS: {kit.os_name}'
-                if not kit.user_password_is_set:
+                if kit.is_jupiter and not kit.user_password_is_set:
                     description += f' - user password is not set'
 
                 prompt_upgrade_fix = False
