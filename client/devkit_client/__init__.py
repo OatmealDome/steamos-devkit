@@ -194,8 +194,8 @@ def _locate_external_tool(name):
     if getattr(sys, 'frozen', False):
         # Scripts that were frozen into a standalone executable via cx_freeze are expected to package the binaries
         tools_path = os.path.dirname(sys.executable)
-        ret = os.path.join(tools_path, name)
-        assert(os.path.exists(ret))
+        ret = os.path.join(tools_path, 'cygroot/bin', name)
+        assert os.path.exists(ret)
         return ret
     # Running from source:
     # Locate a cygwin version. That's what we package. Windows ssh.exe isn't a compatible transport for rsync for instance
@@ -596,7 +596,7 @@ class DevkitClient(object):
 
         assert os.path.exists(localdir)
         if sys.platform == 'win32':
-            self.test_cygpath(localdir)
+            localdir = self.native_to_cygwin_path(localdir)
 
         cmd = [
             self.rsync,
@@ -618,17 +618,15 @@ class DevkitClient(object):
         # NOTE: we force folder to folder here with the trailing /
         # makes the function easier to use but limits our ability to pull remote patterns..
         upload_cmd = [
-            #'{}/'.format(localdir.rstrip('/')),
-            './',
+            '{}/'.format(localdir.rstrip('/')),
             '{}@{}:{}/'.format(user, ipaddress, remotedir.rstrip('/')),
         ]
         if not transfer_to_remote:
             upload_cmd.reverse()
         cmd += upload_cmd
-        logger.info(f'Execute in {localdir!r}: {shlex.join(cmd)}')
+        logger.info(shlex.join(cmd))
         self.rsync_process = subprocess.Popen(
             cmd,
-            cwd=localdir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             creationflags=SUBPROCESS_CREATION_FLAGS,
@@ -646,6 +644,7 @@ class DevkitClient(object):
         return retcode
 
     def test_cygpath(self, _path):
+        # had to move the cygpath.exe under cygroot/bin/ to avoid the path above the binary to get interpreted as '/' (root)
         logger.info('DBG: testing cygpath.exe behavior, see https://cygwin.com/pipermail/cygwin/2022-June/251750.html')
         wp = pathlib.WindowsPath(_path)
         for i in range(1, len(wp.parts)+1):
@@ -661,7 +660,21 @@ class DevkitClient(object):
             output = str(p.communicate()[0], 'utf-8')
             s_cmd = ' '.join(cmd)
             logger.info(f'DBG: {s_cmd!r}: {p.returncode} {output!r}')
-        #return output.split('\n')[0]
+
+    def native_to_cygwin_path(self, path):
+        p = subprocess.Popen(
+            [
+                self.cygpath,
+                path,
+            ],
+            creationflags=SUBPROCESS_CREATION_FLAGS,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        output = str(p.communicate()[0], 'utf-8')
+        logger.debug(output)
+        assert p.returncode == 0
+        return output.split('\n')[0]
 
 
 class Machine:

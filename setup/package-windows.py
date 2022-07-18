@@ -43,6 +43,8 @@ if __name__ == '__main__':
 
     cygroot = r'C:\cygwin64\bin'
     assert os.path.isdir(cygroot)
+    cygwin_dst_dir = os.path.join(DIST_DIR, 'cygroot/bin')
+    os.makedirs(cygwin_dst_dir, exist_ok=True)
     for name in [
         'cygpath.exe',
         'rsync.exe',
@@ -62,7 +64,7 @@ if __name__ == '__main__':
         'cygzstd-1.dll',
         'cygxxhash-0.dll'
         ]:
-        shutil.copy(os.path.join(cygroot, name), DIST_DIR)
+        shutil.copy(os.path.join(cygroot, name), cygwin_dst_dir)
 
     shutil.copytree(os.path.join(ROOT_DIR, 'third-party-licenses'), os.path.join(DIST_DIR, 'third-party-licenses'), dirs_exist_ok=True)
 
