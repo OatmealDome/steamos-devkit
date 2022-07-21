@@ -1,3 +1,8 @@
+2022-07-21 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20220721.0
+	* Further iteration to fix problems with cygpath causing title upload errors.
+
 2022-06-28 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220628.0
