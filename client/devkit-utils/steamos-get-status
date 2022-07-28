@@ -129,8 +129,15 @@ def osclient_branch():
     if not os.path.exists(beta_path):
         return 'default' # not sure that's valid actually - would be the desktop client, which will only run in desktop mode ..
     t = open(beta_path, 'rt').readline().strip('\n')
+    p1 = 'steamdeck_(.*)'
+    p2 = 'steampal_(.*)_.*'
     try:
-        branch = re.split('steampal_(.*)_.*', t)[1]
+        if re.match(p1, t):
+            branch = re.split(p1, t)[1]
+        else:
+            # legacy pattern, only used for internal builds
+            assert re.match(p2, t)
+            branch = 'internal ' + re.split(p2, t)[1]
         return branch
     except:
         logger.warning(f'could not determine the OS client branch config: {t!r}')
