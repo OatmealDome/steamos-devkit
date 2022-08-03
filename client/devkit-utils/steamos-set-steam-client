@@ -36,7 +36,7 @@ def write_trampoline(text):
         devkit_steam.flush()
     os.chmod(DEVKIT_STEAM_TRAMPOLINE, 0o770)
     # trying really hard to avoid leaving a zero sized trampoline if the deck is about to hang on the sddm restart coming next
-    subprocess.run('/usr/bin/sync')
+    subprocess.run(['/usr/bin/sync', DEVKIT_TOOL_FOLDER])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
