@@ -6,6 +6,7 @@ import logging
 import argparse
 import tempfile
 import urllib.parse
+import re
 
 import devkit_utils
 
@@ -26,9 +27,13 @@ if __name__ == '__main__':
     else:
         with tempfile.TemporaryDirectory(prefix='steam-devkit-rpc') as tempdir:
             response = os.path.join(tempdir, 'steam-devkit-rpc')
-            cmd = f'{conf.command}?response={urllib.parse.quote_plus(response)}'
+            parms = {
+                'response' : response,
+            }
             for arg in conf.args:
-                cmd += f'&{arg}'
+                (k, v) = re.split('=', arg)
+                parms[k] = v
+            cmd = f'{conf.command}/?{urllib.parse.urlencode(parms)}'
             devkit_utils.execute_steam_client_command(cmd)
             try:
                 with devkit_utils.wait_on_file_response(response) as success_response:
