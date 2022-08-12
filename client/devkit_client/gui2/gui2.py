@@ -1144,6 +1144,7 @@ class DevkitsWindow(ToolWindow):
         imgui.set_cursor_pos_x(30*CHARACTER_WIDTH)
         imgui.push_item_width(20*CHARACTER_WIDTH)
         changed, s = imgui.input_text('##add_by_ip', self.add_by_ip_text, 128)
+        imgui.pop_item_width()
         if changed:
             self.add_by_ip_text = s
         imgui.same_line()
@@ -1151,6 +1152,7 @@ class DevkitsWindow(ToolWindow):
         imgui.same_line()
         imgui.push_item_width(6*CHARACTER_WIDTH)
         changed, p = imgui.input_text('##add_by_ip_port', self.add_by_ip_port, 6)
+        imgui.pop_item_width()
         if changed:
             self.add_by_ip_port = p
         imgui.same_line()
@@ -1354,6 +1356,7 @@ class DevkitsWindow(ToolWindow):
                     session_status_index,
                     combo_options,
                 )
+                imgui.pop_item_width()
                 if clicked:
                     # apply immediately
                     if selected_out < len(steamos_status['session_options']):
