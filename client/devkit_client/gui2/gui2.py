@@ -898,10 +898,12 @@ class ModalWait:
             if self._result is None and self._error is None:
                 # Reset output text override, so we can override the wait and the final message independently
                 self._override_output_text = None
-                # Collect the result of error - (runs once)
+                # Runs once: collecting either a result, or an error
                 try:
                     self._result = self.task_future.result()
                     if self.exit_on_success:
+                        if len(self.signal_task_done.slots):
+                            logger.warning('WARNING: ModalWait: signal_task_done has active slots, but does not fire when exit_on_success is set')
                         return False
                 except Exception as e:
                     self._error = e
@@ -913,9 +915,9 @@ class ModalWait:
                 # Output text was set externally
                 output_text = self._override_output_text
             else:
-                # Default output text rules
+                # Setup the result message to display according to some default rules
                 if not self._error is None:
-                    output_text = 'ERROR: {}'.format(self._error)
+                    output_text = f'ERROR: {self._error}'
                 else:
                     output_text = str(self._result)
         if output_text != self.output_text:
@@ -925,7 +927,6 @@ class ModalWait:
         button_offset = 58 # account for button vertical space when going from text size to dialog size
 
         if trigger_resize and not self.user_resized:
-            # ideal text area size to in the dialog
             (text_width, text_height) = imgui_calc_text_size(self.output_text)
             # minimum dimensions, only increase dimensions on auto-resize, never exceed viewport size
             self.dialog_width = min(self.viewport.width, max(15*CHARACTER_WIDTH, len(self.title)*CHARACTER_WIDTH, text_width, self.dialog_width))
@@ -973,6 +974,49 @@ class ModalWait:
 
             imgui.end_popup()
         return True
+
+
+class ModalListBox:
+    def __init__(self, viewport, title, items, selected_item = 0):
+        self.viewport = viewport
+        self.title = title
+        self.items = items
+        self.selected_item = selected_item # index
+
+        self.signal_task_done = signalslot.Signal()
+
+        # cache
+        self.width = None
+        self.height = None
+        self.n_items = None
+
+        self.result = None
+
+    def draw(self):
+        imgui.open_popup(self.title)
+        ret = True
+
+        if self.height is None:
+            self.n_items = min( len(self.items), int( ( self.viewport.height - 3*CHARACTER_HEIGHT ) / ( 1.4 * CHARACTER_HEIGHT ) ) )
+            self.height = int( self.n_items * 1.4 * CHARACTER_HEIGHT + 3 * CHARACTER_HEIGHT )
+            self.width = max( [ imgui_calc_text_size(s)[0] for s in self.items ] ) + 100
+            imgui.set_next_window_size(self.width, self.height)
+            imgui.set_next_window_position((self.viewport.width-self.width)/2, (self.viewport.height-self.height)/2)
+
+        if imgui.begin_popup_modal(self.title):
+            changed, selected_item = imgui.listbox('', self.selected_item, self.items, height_in_items=self.n_items)
+            if changed:
+                self.selected_item = selected_item
+            if imgui.button('OK'):
+                self.result = self.items[self.selected_item]
+                self.signal_task_done.emit()
+                ret = False
+            imgui.same_line()
+            if imgui.button('Cancel'):
+                self.result = None
+                ret = False
+            imgui.end_popup()
+        return ret
 
 
 class DevkitsWindow(ToolWindow):
