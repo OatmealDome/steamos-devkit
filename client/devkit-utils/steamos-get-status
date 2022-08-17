@@ -9,6 +9,7 @@ import enum
 import argparse
 import json
 import shlex
+import datetime
 
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
@@ -298,7 +299,8 @@ if __name__ == '__main__':
     if steam_status in (SteamStatus.OS, SteamStatus.OS_DEV) :
         steam_status_description += f', on branch {osclient_branch!r}'
         if osclient_version is not None:
-            steam_status_description += f', version {osclient_version}'
+            utc_date_string = datetime.datetime.utcfromtimestamp(osclient_version).isoformat()
+            steam_status_description += f', version {osclient_version} {utc_date_string}'
 
     has_side_loaded_client = os.path.exists(
         os.path.join(

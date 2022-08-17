@@ -1376,7 +1376,7 @@ class DevkitsWindow(ToolWindow):
                         )
 
                 # === Steam client config ========================================================
-                imgui.text(f'{"Steam client is":<{ljust}}:')
+                imgui.text(f'{"Steam client":<{ljust}}:')
                 imgui.same_line()
                 imgui.push_item_width(30*CHARACTER_WIDTH)
                 imgui.text(steamos_status['steam_status_description'])
