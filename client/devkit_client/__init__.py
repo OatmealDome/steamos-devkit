@@ -1415,6 +1415,19 @@ def rgp_capture(args):
         profiler_cmd = [args.rgp_path, local_path]
         subprocess.Popen(profiler_cmd)
 
+def is_renderdoc_capture_enabled(args):
+    ssh = _open_ssh_for_args(args)
+    (_, _, exit_status) = _simple_ssh(ssh, "cat /tmp/devkit_client_wants_renderdoc", check_status=False)
+    return exit_status == 0;
+
+def enable_renderdoc(args):
+    ssh = _open_ssh_for_args(args)
+    _simple_ssh(ssh, 'rm /tmp/devkit_client_wants_renderdoc', silent=True, check_status=False)
+    _simple_ssh(ssh, 'killall -9 renderdoccmd', silent=True, check_status=False)
+    if args.enabled:
+        _simple_ssh(ssh, 'touch /tmp/devkit_client_wants_renderdoc', silent=True)
+        _simple_ssh(ssh, 'renderdoccmd remoteserver -d', silent=True)
+
 
 def restart_sddm(args):
     ssh = _open_ssh_for_args(args)

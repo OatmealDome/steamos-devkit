@@ -332,6 +332,29 @@ class DevkitCommands:
     def rgp_capture(self, *args):
         return self.executor.submit(self._rgp_capture, *args)
 
+    def _enable_renderdoc(self, *args):
+        class EnableRenderDocArgs:
+            def __init__(self, devkit, enabled):
+                self.machine, self.machine_name_type = devkit.machine_command_args
+                self.http_port = devkit.http_port
+                self.login = None
+                self.enabled = enabled
+        enable_renderdoc_args = EnableRenderDocArgs(*args)
+        devkit_client.enable_renderdoc(enable_renderdoc_args)
+
+    def enable_renderdoc(self, *args):
+        return self.executor.submit(self._enable_renderdoc, *args)
+
+    # This is blocking, does not return a task
+    def is_renderdoc_capture_enabled(self, devkit):
+        class RenderDocCaptureCheckArgs:
+            def __init__(self, devkit):
+                self.machine, self.machine_name_type = devkit.machine_command_args
+                self.http_port = devkit.http_port
+                self.login = None
+        sddm_restart_args = RenderDocCaptureCheckArgs(devkit)
+        return devkit_client.is_renderdoc_capture_enabled(sddm_restart_args)
+
     def _restart_sddm(self, devkit):
         class RestartSDDMArgs:
             def __init__(self, devkit):
@@ -586,6 +609,7 @@ class Devkit:
             self._http_port = self.zc_listener.port_for_service(self.service_name)
         else:
             self._http_port = port
+        self.is_renderdoc_capture_enabled = None
 
     # returns a tri-state as well
     @property
@@ -1032,6 +1056,7 @@ class DevkitsWindow(ToolWindow):
                  perf_overlay,
                  gpu_trace,
                  rgp_capture,
+                 renderdoc_capture,
                  controller_configs,
                  delete_title,
                  *args):
@@ -1043,6 +1068,7 @@ class DevkitsWindow(ToolWindow):
         self.perf_overlay = perf_overlay
         self.gpu_trace = gpu_trace
         self.rgp_capture = rgp_capture
+        self.renderdoc_capture = renderdoc_capture
         self.controller_configs = controller_configs
         self.delete_title = delete_title
         # Visible by default
@@ -1487,6 +1513,7 @@ class DevkitsWindow(ToolWindow):
             subtool_list += [
                 self.controller_configs,
                 self.delete_title,
+                self.renderdoc_capture,
             ]
 
             # sub tools do their own drawing in the devkits window and have their own trigger buttons
@@ -2544,6 +2571,54 @@ class RGPCapture(SubTool):
             )
 
 
+class RenderDocCapture(SubTool):
+    BUTTON_NAME = 'Open RenderDoc'
+    RDOC_KEY = 'RenderDocCapture.RenderDoc_path'
+
+    def setup(self):
+        if not self.RDOC_KEY in self.settings:
+            rdoc_bin = 'C:\\Program Files\\RenderDoc\\qrenderdoc.exe' if platform.system() == 'Windows' else 'qrenderdoc'
+            rdoc_path = shutil.which(rdoc_bin)
+            if rdoc_path is None:
+                rdoc_path = 'NOT SET'
+            self.settings[self.RDOC_KEY] = rdoc_path
+        self.viewport.signal_draw.connect(self.on_draw)
+
+    def devkits_window_draw(self, selected_devkit):
+        if selected_devkit.is_renderdoc_capture_enabled == None:
+            selected_devkit.is_renderdoc_capture_enabled = self.devkit_commands.is_renderdoc_capture_enabled(selected_devkit)
+
+        imgui.set_cursor_pos_x(8*CHARACTER_WIDTH)
+        changed, v = imgui.checkbox('RenderDoc Capture Enabled', selected_devkit.is_renderdoc_capture_enabled)
+        if changed:
+            self.devkit_commands.enable_renderdoc(selected_devkit, v)
+            selected_devkit.is_renderdoc_capture_enabled = v
+
+        imgui.same_line()
+        imgui.set_cursor_pos_x(54*CHARACTER_WIDTH)
+        imgui.text('Local RenderDoc Path:')
+
+        imgui.same_line()
+        imgui.set_cursor_pos_x(74*CHARACTER_WIDTH)
+        imgui.set_next_item_width(48*CHARACTER_WIDTH)
+        changed, s = imgui.input_text('##renderdoc_path', self.settings[self.RDOC_KEY], 260)
+        if changed:
+            self.settings[self.RDOC_KEY] = s
+
+        imgui.same_line()
+        imgui.set_cursor_pos_x(1100)
+        if imgui.button(RenderDocCapture.BUTTON_NAME):
+            machine = devkit_client.resolve_machine(
+                selected_devkit.machine_command_args[0],
+                name_type=selected_devkit.machine_command_args[1],
+                http_port=selected_devkit.http_port
+            )
+            # TODO: The replayhost thing in RenderDoc is useless right now, as it complains you need to add it to the GUI first :v
+            #       additionally, remoteaccess just doesn't work.
+            rdoc_cmd = [self.settings[self.RDOC_KEY]] #, "--remoteaccess", machine.address, "--replayhost", machine.address]
+            logger.info(' '.join(rdoc_cmd))
+            subprocess.Popen(rdoc_cmd)
+
 class ControllerConfigs(SubTool):
     BUTTON_NAME = 'Get Controller Config'
     FOLDER_KEY = 'ControllerConfigs.folder'
@@ -3122,6 +3197,8 @@ def main():
     gpu_trace.setup()
     rgp_capture = RGPCapture(devkit_commands,  viewport, toolbar, settings)
     rgp_capture.setup()
+    renderdoc_capture = RenderDocCapture(devkit_commands,  viewport, toolbar, settings)
+    renderdoc_capture.setup()
     controller_configs = ControllerConfigs(devkit_commands, viewport, toolbar, settings)
     controller_configs.setup()
     delete_title = DeleteTitle(devkit_commands, viewport, toolbar, settings)
@@ -3143,6 +3220,7 @@ def main():
         perf_overlay,
         gpu_trace,
         rgp_capture,
+        renderdoc_capture,
         controller_configs,
         delete_title,
         viewport,
