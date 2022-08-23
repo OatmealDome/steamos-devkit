@@ -1504,16 +1504,18 @@ class DevkitsWindow(ToolWindow):
 
             subtool_list = []
             if self.selected_devkit.is_jupiter:
+                # subtools requiring some amount of device side support, which we only enable against the deck
                 subtool_list += [
                     self.screenshot,
                     self.perf_overlay,
                     self.gpu_trace,
                     self.rgp_capture,
                 ]
+            # subtools that work against Steam linux desktop targets too
             subtool_list += [
+                self.renderdoc_capture,
                 self.controller_configs,
                 self.delete_title,
-                self.renderdoc_capture,
             ]
 
             # sub tools do their own drawing in the devkits window and have their own trigger buttons
@@ -2588,22 +2590,18 @@ class RenderDocCapture(SubTool):
         if selected_devkit.is_renderdoc_capture_enabled == None:
             selected_devkit.is_renderdoc_capture_enabled = self.devkit_commands.is_renderdoc_capture_enabled(selected_devkit)
 
-        imgui.set_cursor_pos_x(8*CHARACTER_WIDTH)
-        changed, v = imgui.checkbox('RenderDoc Capture Enabled', selected_devkit.is_renderdoc_capture_enabled)
-        if changed:
-            self.devkit_commands.enable_renderdoc(selected_devkit, v)
-            selected_devkit.is_renderdoc_capture_enabled = v
-
+        imgui.text('  Path:')
         imgui.same_line()
-        imgui.set_cursor_pos_x(54*CHARACTER_WIDTH)
-        imgui.text('Local RenderDoc Path:')
-
-        imgui.same_line()
-        imgui.set_cursor_pos_x(74*CHARACTER_WIDTH)
         imgui.set_next_item_width(48*CHARACTER_WIDTH)
         changed, s = imgui.input_text('##renderdoc_path', self.settings[self.RDOC_KEY], 260)
         if changed:
             self.settings[self.RDOC_KEY] = s
+
+        imgui.same_line()
+        changed, v = imgui.checkbox('Enable RenderDoc captures', selected_devkit.is_renderdoc_capture_enabled)
+        if changed:
+            self.devkit_commands.enable_renderdoc(selected_devkit, v)
+            selected_devkit.is_renderdoc_capture_enabled = v
 
         imgui.same_line()
         imgui.set_cursor_pos_x(1100)
