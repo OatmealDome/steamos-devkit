@@ -332,28 +332,11 @@ class DevkitCommands:
     def rgp_capture(self, *args):
         return self.executor.submit(self._rgp_capture, *args)
 
-    def _enable_renderdoc(self, *args):
-        class EnableRenderDocArgs:
-            def __init__(self, devkit, enabled):
-                self.machine, self.machine_name_type = devkit.machine_command_args
-                self.http_port = devkit.http_port
-                self.login = None
-                self.enabled = enabled
-        enable_renderdoc_args = EnableRenderDocArgs(*args)
-        devkit_client.enable_renderdoc(enable_renderdoc_args)
+    def _enable_renderdoc(self, devkit, enable):
+        return devkit_client.enable_renderdoc(devkit, enable)
 
     def enable_renderdoc(self, *args):
         return self.executor.submit(self._enable_renderdoc, *args)
-
-    # This is blocking, does not return a task
-    def is_renderdoc_capture_enabled(self, devkit):
-        class RenderDocCaptureCheckArgs:
-            def __init__(self, devkit):
-                self.machine, self.machine_name_type = devkit.machine_command_args
-                self.http_port = devkit.http_port
-                self.login = None
-        sddm_restart_args = RenderDocCaptureCheckArgs(devkit)
-        return devkit_client.is_renderdoc_capture_enabled(sddm_restart_args)
 
     def _restart_sddm(self, devkit):
         class RestartSDDMArgs:
@@ -609,7 +592,6 @@ class Devkit:
             self._http_port = self.zc_listener.port_for_service(self.service_name)
         else:
             self._http_port = port
-        self.is_renderdoc_capture_enabled = None
 
     # returns a tri-state as well
     @property
@@ -693,6 +675,18 @@ class Devkit:
     @property
     def safe_to_upgrade(self):
         return self.steamos_status.get('safe_to_upgrade', None)
+
+    @property
+    def is_renderdoc_capture_enabled(self):
+        return self.steamos_status['steam_launch_flags'].get('ENABLE_VULKAN_RENDERDOC_CAPTURE', False)
+
+    @is_renderdoc_capture_enabled.setter
+    def is_renderdoc_capture_enabled(self, enabled):
+        status_flags = self.steamos_status['steam_launch_flags']
+        if enabled:
+            status_flags['ENABLE_VULKAN_RENDERDOC_CAPTURE'] = '1'
+        elif 'ENABLE_VULKAN_RENDERDOC_CAPTURE' in status_flags:
+            del status_flags['ENABLE_VULKAN_RENDERDOC_CAPTURE']
 
     def has_mdns_service(self):
         return self.service_name is not None
@@ -2586,10 +2580,11 @@ class RenderDocCapture(SubTool):
             self.settings[self.RDOC_KEY] = rdoc_path
         self.viewport.signal_draw.connect(self.on_draw)
 
-    def devkits_window_draw(self, selected_devkit):
-        if selected_devkit.is_renderdoc_capture_enabled == None:
-            selected_devkit.is_renderdoc_capture_enabled = self.devkit_commands.is_renderdoc_capture_enabled(selected_devkit)
+    def on_enable_renderdoc_done(self, selected_devkit, f):
+        enabled = f.result()
+        selected_devkit.is_renderdoc_capture_enabled = enabled
 
+    def devkits_window_draw(self, selected_devkit):
         imgui.text('  Path:')
         imgui.same_line()
         imgui.set_next_item_width(48*CHARACTER_WIDTH)
@@ -2598,10 +2593,17 @@ class RenderDocCapture(SubTool):
             self.settings[self.RDOC_KEY] = s
 
         imgui.same_line()
-        changed, v = imgui.checkbox('Enable RenderDoc captures', selected_devkit.is_renderdoc_capture_enabled)
+        changed, v = imgui.checkbox('RenderDoc captures enabled', selected_devkit.is_renderdoc_capture_enabled)
         if changed:
-            self.devkit_commands.enable_renderdoc(selected_devkit, v)
-            selected_devkit.is_renderdoc_capture_enabled = v
+            switch_future = self.devkit_commands.enable_renderdoc(selected_devkit, v)
+            self.modal_wait = ModalWait(
+                self.viewport,
+                self.toolbar,
+                ( 'Enabled' if v else 'Disable' ) + f' on {selected_devkit.name}',
+                switch_future,
+                exit_on_success = True
+            )
+            switch_future.add_done_callback(functools.partial(self.on_enable_renderdoc_done, selected_devkit))
 
         imgui.same_line()
         imgui.set_cursor_pos_x(1100)
