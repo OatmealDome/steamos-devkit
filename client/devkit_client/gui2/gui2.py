@@ -2362,7 +2362,14 @@ class PerfOverlay(SubTool):
         self.log_perf_data = None
 
     def devkits_window_draw(self, selected_devkit):
-        imgui.set_cursor_pos_x(8*CHARACTER_WIDTH)
+        imgui.text('Folder:')
+        imgui.same_line()
+        imgui.set_next_item_width(48*CHARACTER_WIDTH)
+        changed, s = imgui.input_text('##PerfDataFolder', self.settings[self.FOLDER_KEY], 260)
+        if changed:
+            self.settings[self.FOLDER_KEY] = s
+
+        imgui.same_line()
         if self.draw_perf_overlay is None:
             imgui.internal.push_item_flag(imgui.internal.ITEM_MIXED_VALUE, True)
             clicked, v = imgui.checkbox('Draw performance overlay', False)
@@ -2379,16 +2386,6 @@ class PerfOverlay(SubTool):
                 cmd_future,
                 exit_on_success=True,
             )
-
-        imgui.same_line()
-        imgui.set_cursor_pos_x(57*CHARACTER_WIDTH)
-        imgui.text('frametime folder:')
-        imgui.same_line()
-        imgui.set_cursor_pos_x(74*CHARACTER_WIDTH)
-        imgui.set_next_item_width(48*CHARACTER_WIDTH)
-        changed, s = imgui.input_text('##PerfDataFolder', self.settings[self.FOLDER_KEY], 260)
-        if changed:
-            self.settings[self.FOLDER_KEY] = s
 
         imgui.same_line()
         imgui.set_cursor_pos_x(1100)
@@ -2563,7 +2560,19 @@ class ControllerConfigs(SubTool):
             self.settings[self.GAMEID_KEY] = ''
 
     def devkits_window_draw(self, selected_devkit):
-        imgui.text(' appid:')
+        imgui.text('Folder:')
+        imgui.same_line()
+        imgui.set_next_item_width(48*CHARACTER_WIDTH)
+        changed, s = imgui.input_text(
+            '##controller_config_folder',
+            self.settings[self.FOLDER_KEY],
+            260
+        )
+        if changed:
+            self.settings[self.FOLDER_KEY] = s
+
+        imgui.same_line()
+        imgui.text('AppID:')
         imgui.same_line()
         imgui.set_next_item_width(16*CHARACTER_WIDTH)
         changed, s = imgui.input_text(
@@ -2574,7 +2583,7 @@ class ControllerConfigs(SubTool):
         if changed:
             self.settings[self.APPID_KEY] = s
         imgui.same_line()
-        imgui.text('(or) title name:')
+        imgui.text('(or) name:')
         imgui.same_line()
         imgui.set_next_item_width(16*CHARACTER_WIDTH)
         changed, s = imgui.input_text(
@@ -2584,18 +2593,7 @@ class ControllerConfigs(SubTool):
         )
         if changed:
             self.settings[self.GAMEID_KEY] = s
-        imgui.same_line()
-        imgui.text('to folder:')
-        imgui.same_line()
-        imgui.set_cursor_pos_x(67*CHARACTER_WIDTH)
-        imgui.set_next_item_width(55*CHARACTER_WIDTH)
-        changed, s = imgui.input_text(
-            '##controller_config_folder',
-            self.settings[self.FOLDER_KEY],
-            260
-        )
-        if changed:
-            self.settings[self.FOLDER_KEY] = s
+
         imgui.same_line()
         imgui.set_cursor_pos_x(1100)
         if imgui.button(self.BUTTON_NAME):
