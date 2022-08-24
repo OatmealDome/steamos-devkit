@@ -269,12 +269,12 @@ class DevkitCommands:
                 self.http_port = devkit.http_port
                 self.local_folder = logs_folder
 
-        # check that the Steam client is in a configuration that writes out logs
-        if devkit.steam_client_status == 'SteamStatus.OS':
-            raise Exception("Steam is not configured to write logs on the device - please use the Devkits tab to switch to 'OS Client dev mode'")
-
         sync_logs_args = SyncLogsArgs(devkit, logs_folder)
         devkit_client.sync_logs(sync_logs_args)
+
+        if devkit.steam_client_status == 'SteamStatus.OS':
+            raise Exception('Some important logs are not be collected, please change the Steam client mode to \'logging+cmdline\' in the Devkit tab')
+
         return True
 
     def sync_logs(self, devkit, logs_folder):
@@ -1142,9 +1142,9 @@ class DevkitsWindow(ToolWindow):
             self.selected_devkit,
             target_steam_client,
             None,                   # no command
-            self.steam_client_args,    # we have command line arguments instead
-            True, # wait
-            False, # gdbserver - default off here, use 'Title Upload' for the feature
+            self.steam_client_args, # we have command line arguments instead
+            True,                   # wait
+            False,                  # gdbserver - default off here, use 'Title Upload' for the feature
         )
         self.modal_wait = ModalWait(
             self.viewport,
