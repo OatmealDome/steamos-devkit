@@ -678,11 +678,11 @@ class Devkit:
 
     @property
     def is_renderdoc_capture_enabled(self):
-        return self.steamos_status['steam_launch_flags'].get('ENABLE_VULKAN_RENDERDOC_CAPTURE', False)
+        return self.steamos_status.get('steam_launch_flags', {}).get('ENABLE_VULKAN_RENDERDOC_CAPTURE', False)
 
     @is_renderdoc_capture_enabled.setter
     def is_renderdoc_capture_enabled(self, enabled):
-        status_flags = self.steamos_status['steam_launch_flags']
+        status_flags = self.steamos_status.get('steam_launch_flags', {})
         if enabled:
             status_flags['ENABLE_VULKAN_RENDERDOC_CAPTURE'] = '1'
         elif 'ENABLE_VULKAN_RENDERDOC_CAPTURE' in status_flags:
