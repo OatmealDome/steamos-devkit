@@ -594,7 +594,8 @@ class DevkitClient(object):
     ):
         '''Folder transfers. Either direction, controlled by the upload parm'''
 
-        assert os.path.exists(localdir)
+        if not os.path.isdir(localdir):
+            raise Exception(f'Source directory does not exist: {localdir}')
         if sys.platform == 'win32':
             localdir = self.native_to_cygwin_path(localdir)
 
