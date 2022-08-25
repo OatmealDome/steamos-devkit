@@ -1141,22 +1141,6 @@ def sync_logs(args):
         http_port=getattr(args, 'http_port', DEFAULT_DEVKIT_SERVICE_HTTP),
     )
 
-    # TODO: need to completely redo what and how we pull logs - see jupiter#133
-
-    # forget about that wayland log for now, all Steam client output is in logs
-#    local_sddm_folder = os.path.join(args.local_folder, 'sddm')
-#    os.makedirs(local_sddm_folder, exist_ok=True)
-#
-#    client.rsync_transfer(
-#        local_sddm_folder,
-#        machine.login,
-#        machine.address,
-#        '/home/{}/.local/share/sddm/'.format(machine.login),
-#        True,
-#        False,
-#        []
-#    )
-
     local_steamlogs_folder = os.path.join(args.local_folder, 'steam_logs')
     os.makedirs(local_steamlogs_folder, exist_ok=True)
 
@@ -1181,6 +1165,20 @@ def sync_logs(args):
         True,
         False,
         False,
+    )
+
+    local_proton_folder = os.path.join(args.local_folder, 'proton')
+    os.makedirs(local_proton_folder, exist_ok=True)
+
+    client.rsync_transfer(
+        local_proton_folder,
+        machine.login,
+        machine.address,
+        f'/home/{machine.login}',
+        True,
+        False,
+        False,
+        [ '--include=steam-*.log', '--exclude=*' ]
     )
 
 
