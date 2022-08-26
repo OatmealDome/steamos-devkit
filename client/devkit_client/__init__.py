@@ -1167,20 +1167,6 @@ def sync_logs(args):
         False,
     )
 
-    local_proton_folder = os.path.join(args.local_folder, 'proton')
-    os.makedirs(local_proton_folder, exist_ok=True)
-
-    client.rsync_transfer(
-        local_proton_folder,
-        machine.login,
-        machine.address,
-        f'/home/{machine.login}',
-        True,
-        False,
-        False,
-        [ '--include=steam-*.log', '--exclude=*' ]
-    )
-
 
 # Open a remote shell, or execute a command interactively against a device
 # This is handy for privileged operations (sudo) and remote CLI interactions

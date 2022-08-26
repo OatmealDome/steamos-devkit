@@ -689,6 +689,18 @@ class Devkit:
         elif 'ENABLE_VULKAN_RENDERDOC_CAPTURE' in status_flags:
             del status_flags['ENABLE_VULKAN_RENDERDOC_CAPTURE']
 
+    @property
+    def is_proton_log_enabled(self):
+        return self.steamos_status.get('steam_launch_flags', {}).get('PROTON_LOG', False)
+
+    @is_proton_log_enabled.setter
+    def is_proton_log_enabled(self, enabled):
+        status_flags = self.steamos_status.get('steam_launch_flags', {})
+        if enabled:
+            status_flags['PROTON_LOG'] = '1'
+        elif 'PROTON_LOG' in status_flags:
+            del status_flags['PROTON_LOG']
+
     def has_mdns_service(self):
         return self.service_name is not None
 
@@ -1044,17 +1056,18 @@ class DevkitsWindow(ToolWindow):
     BUTTON_NAME = 'Devkits'
 
     def __init__(self,
-                 conf,
-                 devkit_commands,
-                 settings,
-                 screenshot,
-                 perf_overlay,
-                 gpu_trace,
-                 rgp_capture,
-                 renderdoc_capture,
-                 controller_configs,
-                 delete_title,
-                 *args):
+                conf,
+                devkit_commands,
+                settings,
+                screenshot,
+                perf_overlay,
+                gpu_trace,
+                rgp_capture,
+                renderdoc_capture,
+                proton_logs,
+                controller_configs,
+                delete_title,
+                *args):
         super(DevkitsWindow, self).__init__(self.BUTTON_NAME, *args)
         self.conf = conf
         self.devkit_commands = devkit_commands
@@ -1064,6 +1077,7 @@ class DevkitsWindow(ToolWindow):
         self.gpu_trace = gpu_trace
         self.rgp_capture = rgp_capture
         self.renderdoc_capture = renderdoc_capture
+        self.proton_logs = proton_logs
         self.controller_configs = controller_configs
         self.delete_title = delete_title
         # Visible by default
@@ -1509,6 +1523,7 @@ class DevkitsWindow(ToolWindow):
             # subtools that work against Steam linux desktop targets too
             subtool_list += [
                 self.renderdoc_capture,
+                self.proton_logs,
                 self.controller_configs,
                 self.delete_title,
             ]
@@ -2628,6 +2643,94 @@ class RenderDocCapture(SubTool):
             logger.info(' '.join(rdoc_cmd))
             subprocess.Popen(rdoc_cmd)
 
+class ProtonLogs(SubTool):
+    BUTTON_NAME = 'Sync Proton Logs'
+    FOLDER_KEY = 'ProtonLogs.folder'
+    WINEDEBUG_KEY = 'ProtonLogs.WINEDEBUG'
+
+    def setup(self):
+        if not self.FOLDER_KEY in self.settings:
+            self.settings[self.FOLDER_KEY] = str(pathlib.Path(os.path.expanduser('~/Downloads/ProtonLogs')))
+        if not self.WINEDEBUG_KEY in self.settings:
+            self.settings[self.WINEDEBUG_KEY] = ''
+        self.viewport.signal_draw.connect(self.on_draw)
+        # TODO: initialize this better?
+        self.show_apply = False
+
+    def on_apply_done(self, selected_devkit, enabled, f):
+        selected_devkit.is_proton_log_enabled = enabled
+        self.show_apply = False
+
+    def _config(self, selected_devkit, enable):
+        enable_dict = None
+        disable_list = None
+        if enable:
+            enable_dict = { 'PROTON_LOG': '1' }
+            if self.settings[self.WINEDEBUG_KEY] != '':
+                enable_dict['WINEDEBUG'] = self.settings[self.WINEDEBUG_KEY]
+            else:
+                # delete from wrap if 'default'
+                disable_list = ['WINEDEBUG']
+        else:
+            disable_list = ['PROTON_LOG', 'WINEDEBUG']
+        switch_future = self.devkit_commands.config_steam_wrapper_flags(
+                selected_devkit,
+                enable = enable_dict,
+                disable = disable_list
+            )
+        self.modal_wait = ModalWait(
+            self.viewport,
+            self.toolbar,
+            'Apply Proton log settings on {selected_devkit.name}',
+            switch_future,
+            exit_on_success = True,
+        )
+        switch_future.add_done_callback(functools.partial(self.on_apply_done, selected_devkit, enable))
+
+    def devkits_window_draw(self, selected_devkit):
+        imgui.text('Folder:')
+        imgui.same_line()
+        imgui.set_next_item_width(48*CHARACTER_WIDTH)
+        changed, s = imgui.input_text('##proton_logs_folder', self.settings[self.FOLDER_KEY], 260)
+        if changed:
+            self.settings[self.FOLDER_KEY] = s
+
+        imgui.same_line()
+        changed, v = imgui.checkbox('Proton logging enabled', selected_devkit.is_proton_log_enabled)
+        if changed:
+            self._config(selected_devkit, v)
+
+        imgui.same_line()
+        imgui.set_cursor_pos_x(86*CHARACTER_WIDTH)
+        imgui.text('WINEDEBUG:')
+        imgui.same_line()
+        imgui.set_next_item_width(26*CHARACTER_WIDTH)
+        changed, s = imgui.input_text('##proton_log_winedebug', self.settings[self.WINEDEBUG_KEY], 128)
+        if changed:
+            self.show_apply = True
+            self.settings[self.WINEDEBUG_KEY] = s
+        imgui.same_line()
+        if self.show_apply and imgui.button('Apply##ProtonLogs'):
+            # Always enabled logging, but we may delete the WINEDEBUG customization
+            self._config(selected_devkit, True)
+
+        imgui.same_line()
+        imgui.set_cursor_pos_x(1100)
+        if imgui.button(self.BUTTON_NAME):
+            sync_future = self.devkit_commands.sync_pattern(
+                selected_devkit,
+                self.settings[self.FOLDER_KEY],
+                ['--include=steam-*.log', '--exclude=*']
+            )
+            self.modal_wait = ModalWait(
+                self.viewport,
+                self.toolbar,
+                f'Download Proton logs from {selected_devkit.name}',
+                sync_future,
+                exit_on_success=True
+            )
+
+
 class ControllerConfigs(SubTool):
     BUTTON_NAME = 'Get Controller Config'
     FOLDER_KEY = 'ControllerConfigs.folder'
@@ -3208,6 +3311,8 @@ def main():
     rgp_capture.setup()
     renderdoc_capture = RenderDocCapture(devkit_commands,  viewport, toolbar, settings)
     renderdoc_capture.setup()
+    proton_logs = ProtonLogs(devkit_commands, viewport, toolbar, settings)
+    proton_logs.setup()
     controller_configs = ControllerConfigs(devkit_commands, viewport, toolbar, settings)
     controller_configs.setup()
     delete_title = DeleteTitle(devkit_commands, viewport, toolbar, settings)
@@ -3230,6 +3335,7 @@ def main():
         gpu_trace,
         rgp_capture,
         renderdoc_capture,
+        proton_logs,
         controller_configs,
         delete_title,
         viewport,
