@@ -500,11 +500,11 @@ class DevkitCommands:
     def simple_command(self, *args):
         return self.executor.submit(self._simple_command, *args)
 
-    def _sync_perf_logs(self, *args):
-        return devkit_client.sync_perf_logs(*args)
+    def _sync_pattern(self, *args):
+        return devkit_client.sync_pattern(*args)
 
-    def sync_perf_logs(self, *args):
-        return self.executor.submit(self._sync_perf_logs, *args)
+    def sync_pattern(self, *args):
+        return self.executor.submit(self._sync_pattern, *args)
 
     def _browse_files(self, devkit):
         filezilla = None
@@ -2419,7 +2419,7 @@ class PerfOverlay(SubTool):
                 stop_log_future = self.devkit_commands.simple_command(selected_devkit, ['mangohudctl', 'set', 'log_session', 'false'])
                 def download_logs(f):
                     self.log_perf_data = False
-                    download_logs_future = self.devkit_commands.sync_perf_logs(selected_devkit, self.settings[self.FOLDER_KEY])
+                    download_logs_future = self.devkit_commands.sync_pattern( selected_devkit, self.settings[self.FOLDER_KEY], ['--include=mangoapp_*.csv', '--exclude=*'])
                     self.modal_wait = ModalWait(
                         self.viewport,
                         self.toolbar,

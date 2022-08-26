@@ -1585,7 +1585,7 @@ def simple_command(devkit, cmd):
         cmd = shlex.join(cmd)
     _simple_ssh(ssh, cmd)
 
-def sync_perf_logs(devkit, host_folder):
+def sync_pattern(devkit, host_folder, pattern):
     os.makedirs(host_folder, exist_ok=True)
     (ssh, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
     client.rsync_transfer(
@@ -1596,6 +1596,5 @@ def sync_perf_logs(devkit, host_folder):
         True,
         False,
         False,
-        # NOTE: this disables recursion too
-        [ '--include=mangoapp_*.csv', '--exclude=*' ]
+        extra_cmdline = pattern,
     )
