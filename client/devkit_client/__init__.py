@@ -1415,15 +1415,18 @@ def rgp_capture(args):
         subprocess.Popen(profiler_cmd)
 
 
-def enable_renderdoc(devkit, enable):
+def config_steam_wrapper_flags(devkit, enable, disable):
     ssh = _open_ssh_for_args(ResolveMachineArgs(devkit))
     _simple_ssh(ssh, 'mkdir -p $XDG_RUNTIME_DIR/steam/env', silent=True, check_status=True)
-    _simple_ssh(ssh, 'rm $XDG_RUNTIME_DIR/steam/env/ENABLE_VULKAN_RENDERDOC_CAPTURE', silent=True, check_status=False)
-    _simple_ssh(ssh, 'killall -9 renderdoccmd', silent=True, check_status=False)
+    if disable:
+        for env in disable:
+            logger.info(f'Turn off Steam launch flag: {env}')
+            _simple_ssh(ssh, f'rm -f $XDG_RUNTIME_DIR/steam/env/{env}', silent=True, check_status=True)
     if enable:
-        _simple_ssh(ssh, 'echo 1 > $XDG_RUNTIME_DIR/steam/env/ENABLE_VULKAN_RENDERDOC_CAPTURE', silent=True)
-        _simple_ssh(ssh, 'renderdoccmd remoteserver -d', silent=True)
-    return enable
+        for (k,v) in enable.items():
+            logger.info(f'Set Steam launch flag: {k}={v}')
+            _simple_ssh(ssh, f'echo {v} > $XDG_RUNTIME_DIR/steam/env/{k}', silent=True, check_status=True)
+    return (enable, disable)
 
 
 def restart_sddm(args):

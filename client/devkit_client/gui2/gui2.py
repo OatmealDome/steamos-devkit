@@ -332,12 +332,6 @@ class DevkitCommands:
     def rgp_capture(self, *args):
         return self.executor.submit(self._rgp_capture, *args)
 
-    def _enable_renderdoc(self, devkit, enable):
-        return devkit_client.enable_renderdoc(devkit, enable)
-
-    def enable_renderdoc(self, *args):
-        return self.executor.submit(self._enable_renderdoc, *args)
-
     def _restart_sddm(self, devkit):
         class RestartSDDMArgs:
             def __init__(self, devkit):
@@ -548,6 +542,13 @@ class DevkitCommands:
 
     def fix_upgrade(self, *args):
         return self.executor.submit(self._fix_upgrade, *args)
+
+    def _config_steam_wrapper_flags(self, devkit, enable=None, disable=None):
+        return devkit_client.config_steam_wrapper_flags(devkit, enable, disable)
+
+    def config_steam_wrapper_flags(self, *args, **kwargs):
+        return self.executor.submit(self._config_steam_wrapper_flags, *args, **kwargs)
+
 
 class DevkitState(enum.Enum):
     devkit_init = enum.auto()
@@ -2580,8 +2581,7 @@ class RenderDocCapture(SubTool):
             self.settings[self.RDOC_KEY] = rdoc_path
         self.viewport.signal_draw.connect(self.on_draw)
 
-    def on_enable_renderdoc_done(self, selected_devkit, f):
-        enabled = f.result()
+    def on_enable_renderdoc_done(self, selected_devkit, enabled, f):
         selected_devkit.is_renderdoc_capture_enabled = enabled
 
     def devkits_window_draw(self, selected_devkit):
@@ -2595,7 +2595,16 @@ class RenderDocCapture(SubTool):
         imgui.same_line()
         changed, v = imgui.checkbox('RenderDoc captures enabled', selected_devkit.is_renderdoc_capture_enabled)
         if changed:
-            switch_future = self.devkit_commands.enable_renderdoc(selected_devkit, v)
+            if v:
+                switch_future = self.devkit_commands.config_steam_wrapper_flags(
+                    selected_devkit,
+                    enable = { 'ENABLE_VULKAN_RENDERDOC_CAPTURE': '1' }
+                )
+            else:
+                switch_future = self.devkit_commands.config_steam_wrapper_flags(
+                    selected_devkit,
+                    disable = [ 'ENABLE_VULKAN_RENDERDOC_CAPTURE' ]
+                )
             self.modal_wait = ModalWait(
                 self.viewport,
                 self.toolbar,
@@ -2603,7 +2612,7 @@ class RenderDocCapture(SubTool):
                 switch_future,
                 exit_on_success = True
             )
-            switch_future.add_done_callback(functools.partial(self.on_enable_renderdoc_done, selected_devkit))
+            switch_future.add_done_callback(functools.partial(self.on_enable_renderdoc_done, selected_devkit, v))
 
         imgui.same_line()
         imgui.set_cursor_pos_x(1100)
