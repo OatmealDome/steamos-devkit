@@ -1584,3 +1584,9 @@ def sync_pattern(devkit, host_folder, pattern):
         False,
         extra_cmdline = pattern,
     )
+
+def set_renderdoc_replay(devkit, enable):
+    ssh = _open_ssh_for_args(ResolveMachineArgs(devkit))
+    _simple_ssh(ssh, 'killall -9 renderdoccmd', silent=True, check_status=False)
+    if enable:
+        _simple_ssh(ssh, 'renderdoccmd remoteserver -d', silent=True, check_status=True)

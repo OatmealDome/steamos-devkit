@@ -549,6 +549,11 @@ class DevkitCommands:
     def config_steam_wrapper_flags(self, *args, **kwargs):
         return self.executor.submit(self._config_steam_wrapper_flags, *args, **kwargs)
 
+    def _set_renderdoc_replay(self, *args):
+        return devkit_client.set_renderdoc_replay(*args)
+
+    def set_renderdoc_replay(self, *args):
+        return self.executor.submit(self._set_renderdoc_replay, *args)
 
 class DevkitState(enum.Enum):
     devkit_init = enum.auto()
@@ -2598,6 +2603,14 @@ class RenderDocCapture(SubTool):
 
     def on_enable_renderdoc_done(self, selected_devkit, enabled, f):
         selected_devkit.is_renderdoc_capture_enabled = enabled
+        renderdoc_future = self.devkit_commands.set_renderdoc_replay(selected_devkit, enabled)
+        self.modal_wait = ModalWait(
+            self.viewport,
+            self.toolbar,
+            f'Configure replay server on {selected_devkit.name}',
+            renderdoc_future,
+            exit_on_success=True,
+        )
 
     def devkits_window_draw(self, selected_devkit):
         imgui.text('  Path:')
