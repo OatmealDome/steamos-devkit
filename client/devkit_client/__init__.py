@@ -1417,11 +1417,7 @@ def config_steam_wrapper_flags(devkit, enable, disable):
 
 def restart_sddm(args):
     ssh = _open_ssh_for_args(args)
-    # TODO: re-enable check_status
-    (_, _, exit_status) = _simple_ssh(ssh, RESTART_SDDM, check_status=False)
-    if exit_status != 0:
-        # TODO: remove passwordless sudo assumptions
-        _simple_ssh(ssh, 'sudo systemctl restart sddm', check_status=True)
+    (_, _, exit_status) = _simple_ssh(ssh, RESTART_SDDM, check_status=True)
 
 
 def screenshot(args):
