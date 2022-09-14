@@ -82,7 +82,6 @@ class DevkitCommands:
 
     def _identify(self, devkit):
         machine = self._check_connectivity(devkit)
-
         assert devkit.limited_connectivity is not None
 
         # If the service cannot be reached, ssh connectivity is irrelevant, we cannot do anything with the kit
@@ -443,11 +442,6 @@ class DevkitCommands:
 
         devkit.ssh_connectivity = self._check_port(machine.address, 22)
         return machine
-
-    # some network setups let mDNS through but block other traffic
-    # the future will return a bool response indicating wether the important devkit ports are reachable
-    def check_connectivity(self, devkit):
-        return self.executor.submit(self._check_connectivity, devkit)
 
     def _set_session(self, devkit, *args):
         class SetSessionArgs:
@@ -1311,9 +1305,11 @@ class DevkitsWindow(ToolWindow):
                             del self.devkits[kit.name]
 
                     limited_connectivity = kit.limited_connectivity
-                    # we check for this first thing in _identify, shouldn't be possible to come here without it anymore
-                    assert not limited_connectivity is None
-                    if limited_connectivity:
+                    # the connectivity checks may not have completed
+                    if kit.limited_connectivity is None:
+                        imgui.same_line()
+                        imgui.text(f'WARNING: connectivity checks did not complete - ssh: {kit.ssh_connectivity!r} http: {kit.http_connectivity!r}')
+                    elif limited_connectivity:
                         if kit.guest_lan:
                             imgui.same_line()
                             imgui.text(GUEST_LAN_LIMITED_CONNECTIVITY)
