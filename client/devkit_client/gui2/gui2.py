@@ -529,14 +529,6 @@ class DevkitCommands:
     def set_password(self, *args):
         return self.executor.submit(self._set_password, *args)
 
-    def _fix_upgrade(self, devkit):
-        remote_shell_args = devkit_client.ResolveMachineArgs(devkit)
-        p = devkit_client.fix_upgrade(remote_shell_args)
-        p.communicate()
-
-    def fix_upgrade(self, *args):
-        return self.executor.submit(self._fix_upgrade, *args)
-
     def _config_steam_wrapper_flags(self, devkit, enable=None, disable=None):
         return devkit_client.config_steam_wrapper_flags(devkit, enable, disable)
 
@@ -671,10 +663,6 @@ class Devkit:
     @property
     def user_password_is_set(self):
         return self.steamos_status.get('user_password_is_set', False)
-
-    @property
-    def safe_to_upgrade(self):
-        return self.steamos_status.get('safe_to_upgrade', None)
 
     @property
     def is_renderdoc_capture_enabled(self):
@@ -1344,13 +1332,6 @@ class DevkitsWindow(ToolWindow):
                 if kit.is_jupiter and not kit.user_password_is_set:
                     description += f' - user password is not set'
 
-                prompt_upgrade_fix = False
-                if kit.safe_to_upgrade:
-                    description += ' - safe to upgrade to 20220227.3 or newer'
-                elif kit.safe_to_upgrade is not None:
-                    description += ' - NOT SAFE to upgrade to 20220227.3 or newer'
-                    prompt_upgrade_fix = True
-
                 clicked, _ = imgui.checkbox(description, kit.name == self._selected_devkit_name)
                 if clicked:
                     self._selected_devkit_name = kit.name
@@ -1358,25 +1339,6 @@ class DevkitsWindow(ToolWindow):
                     # Mark as the new preferred devkit
                     self.preferred_devkit_name = self._selected_devkit_name
                     self.settings['DevkitsWindow.preferred_devkit_name'] = self.preferred_devkit_name
-
-                if prompt_upgrade_fix:
-                    imgui.same_line()
-                    if imgui.button('Fix / Prepare Updgrade'):
-                        fix_future = self.devkit_commands.fix_upgrade(kit)
-                        def refresh_status(devkits_window, kit, f):
-                            try:
-                                f.result()
-                            except Exception as e:
-                                devkit_client.log_exception(e)
-                            devkits_window.toolbar.signal_pressed.emit(name=RefreshStatus.BUTTON_NAME,selected_devkit=kit)
-                        fix_future.add_done_callback(functools.partial(refresh_status, self, kit))
-                        self.modal_wait = ModalWait(
-                            self.viewport,
-                            self.toolbar,
-                            f'Fixing the account setup for OS upgrade',
-                            fix_future,
-                            exit_on_success=True,
-                        )
 
                 if kit.added_by_ip:
                     imgui.same_line()

@@ -218,32 +218,6 @@ def user_password_is_set():
     logger.debug(repr(ret))
     return (ret.stderr.find('Current password:') != -1)
 
-def pre_day_one_safe_to_upgrade(os_version):
-    '''For OS images pre 27.3, check if the system is safe to upgrade
-Returns a tri-state:
-None: not applicable
-True: safe to upgrade
-False: not safe
-'''
-
-    try:
-        (major, minor) = [int(s) for s in os_version.split('.')]
-    except:
-        logger.warning(f'failed to parse OS version: {os_version!r}')
-        return None
-    if ( major > 20220227 ) or ( major == 20220227 and minor == 3 ):
-        # day one or newer already, not applicable
-        return None
-
-    cp = subprocess.run(
-        'ls /var/lib/overlays/etc/upper/{passwd,group,gpasswd,gshadow}',
-        shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    )
-    problem_files = [ l for l in cp.stdout.split('\n') if len(l) > 0 ]
-    return ( len(problem_files) == 0 )
-
 def steam_launch_flags():
     '''Pull various steam flags that affect title execution.'''
     ret = {}
@@ -340,7 +314,6 @@ if __name__ == '__main__':
         foxnet_hostname = open(FOXNET_HOSTNAME).read().strip()
 
     _user_password_is_set = user_password_is_set()
-    _safe_to_upgrade = pre_day_one_safe_to_upgrade(os_version)
 
     if conf.json:
         ret = {
@@ -362,7 +335,6 @@ if __name__ == '__main__':
             'has_foxnet_connectivity': has_foxnet_connectivity,
             'foxnet_hostname': foxnet_hostname,
             'user_password_is_set': _user_password_is_set,
-            'safe_to_upgrade': _safe_to_upgrade,
             'steam_launch_flags': _steam_launch_flags,
         }
         json.dump(ret, sys.stdout, sort_keys=True, indent=4)
@@ -381,6 +353,5 @@ if __name__ == '__main__':
         logger.info(f"Foxnet backend         : {'yes' if has_foxnet_connectivity else 'no'}")
         logger.info(f"Foxnet hostname        : {foxnet_hostname}")
         logger.info(f"User password is set   : {'yes' if _user_password_is_set else 'no'}")
-        logger.info(f"Safe to upgrade        : {'n/a' if _safe_to_upgrade is None else str(_safe_to_upgrade)}")
         logger.info(f"Steam launch flags     : {_steam_launch_flags}")
 

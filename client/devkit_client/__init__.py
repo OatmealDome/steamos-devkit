@@ -1256,10 +1256,6 @@ def set_password(args):
     return remote_shell(args, ['~/devkit-utils/steamos-set-password.sh'])
 
 
-def fix_upgrade(args):
-    return remote_shell(args, ['sudo', '~/devkit-utils/steamos-fix-upgrade.sh'])
-
-
 def cef_console(args):
     client = DevkitClient()
     logger.info(
