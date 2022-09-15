@@ -1,3 +1,11 @@
+2022-09-15 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Add support for Proton logging. Requires OS 3.3.2 or newer.
+	* Add support for RenderDoc. Requires OS 3.3.2 or newer.
+	* Layout changes on the devkits tab to improve consistency: folders and paths on the left side for all subtools.
+	* Show the build date of the Steam client in ISO format.
+	* Fix lookup and reporting of the active Steam client branch.
+
 2022-07-21 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20220721.0
