@@ -268,12 +268,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     try:
-        if os.path.exists(WIRELESS_DISABLE_POWER_MANAGEMENT):
-            # disable wireless power management for devkit usage: less latency on commands
-            subprocess.check_call(WIRELESS_DISABLE_POWER_MANAGEMENT)
-        else:
-            # TODO: remove passwordless sudo assumptions
-            subprocess.check_call('sudo iwconfig wlan0 power off', shell=True)
+        # disable wireless power management for devkit usage: less latency on commands
+        subprocess.check_call(WIRELESS_DISABLE_POWER_MANAGEMENT)
     except subprocess.CalledProcessError as e:
         logger.warning(e)
 

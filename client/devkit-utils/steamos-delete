@@ -52,8 +52,4 @@ if __name__ == '__main__':
         subprocess.check_call(f'rm -rf ~/.local/share/Steam', shell=True)
 
         # restart SDDM, which will initiate a reinstall of Steam from the OS client
-        if os.path.exists(RESTART_SDDM):
-            subprocess.check_call(RESTART_SDDM)
-        else:
-            # TODO: remove passwordless sudo assumptions
-            subprocess.check_call(f'sudo systemctl restart sddm', shell=True)
+        subprocess.check_call(RESTART_SDDM)
