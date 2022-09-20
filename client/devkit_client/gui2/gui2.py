@@ -168,7 +168,7 @@ class DevkitCommands:
     def _update_game(self, devkit, restart_steam, gdbserver, steam_play, steam_play_debug, steam_play_debug_version, *args):
 
         class NewGameArgs:
-            def __init__(self, devkit, title_name, local_folder, delete_remote_files, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
+            def __init__(self, devkit, title_name, local_folder, delete_extraneous, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
                 self.machine, self.machine_name_type = devkit.machine_command_args
                 self.http_port = devkit.http_port
                 self.name = title_name
@@ -176,7 +176,7 @@ class DevkitCommands:
                 assert type(start_command) is list
                 self.argv = start_command
                 self.login = None
-                self.update = not delete_remote_files
+                self.delete_extraneous = delete_extraneous
                 self.verify_checksums = verify_checksums
                 self.filter_args = filter_args
                 self.steam_play_debug = SteamPlayDebug.Disabled

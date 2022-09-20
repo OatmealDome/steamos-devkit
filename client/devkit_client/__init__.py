@@ -989,7 +989,7 @@ def new_or_ensure_game(args):
         user,
         machine.address,
         destdir,
-        delete_extraneous = not args.update,
+        delete_extraneous = args.delete_extraneous,
         skip_newer_files = False,
         verify_checksums = args.verify_checksums,
         upload = True,
