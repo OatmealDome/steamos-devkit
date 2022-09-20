@@ -1582,7 +1582,7 @@ def simple_command(devkit, cmd):
 
 def sync_pattern(devkit, host_folder, pattern):
     os.makedirs(host_folder, exist_ok=True)
-    (ssh, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
+    (_, client, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
     client.rsync_transfer(
         host_folder,
         machine.login,
@@ -1596,7 +1596,8 @@ def sync_pattern(devkit, host_folder, pattern):
     )
 
 def set_renderdoc_replay(devkit, enable):
-    ssh = _open_ssh_for_args(ResolveMachineArgs(devkit))
+    (ssh, _, machine) = _open_ssh_for_args_all(ResolveMachineArgs(devkit))
     _simple_ssh(ssh, 'killall -9 renderdoccmd', silent=True, check_status=False)
     if enable:
-        _simple_ssh(ssh, 'renderdoccmd remoteserver -d', silent=True, check_status=True)
+        # renderdoccmd adds a 'RenderDoc/' subfolder..
+        _simple_ssh(ssh, f'RENDERDOC_TEMP=/home/{machine.login} renderdoccmd remoteserver -d', silent=True, check_status=True)
