@@ -590,7 +590,7 @@ class DevkitClient(object):
         delete_extraneous = False, # delete extraneous files on the remote
         skip_newer_files = False, # leave files with a newer modification time untouched, allows local changes on the remote
         verify_checksums = False, # force checksum content verification
-        transfer_to_remote = True, # upload to the remote, pass false to download directories
+        upload = True, # uploading to remote by default
         extra_cmdline = [], # additional command line parms, typically content filtering
     ):
         '''Folder transfers. Either direction, controlled by the upload parm'''
@@ -626,7 +626,7 @@ class DevkitClient(object):
             '{}/'.format(localdir.rstrip('/')),
             '{}@{}:{}/'.format(user, ipaddress, remotedir.rstrip('/')),
         ]
-        if not transfer_to_remote:
+        if not upload:
             upload_cmd.reverse()
         cmd += upload_cmd
         logger.info(shlex.join(cmd))
@@ -992,7 +992,7 @@ def new_or_ensure_game(args):
         delete_extraneous = not args.update,
         skip_newer_files = False,
         verify_checksums = args.verify_checksums,
-        transfer_to_remote = True,
+        upload = True,
         extra_cmdline = args.filter_args
     )
 
@@ -1161,7 +1161,7 @@ def sync_logs(args):
         delete_extraneous = False,
         skip_newer_files = False,
         verify_checksums = False,
-        transfer_to_remote = False,
+        upload = False,
     )
 
     local_minidump_folder = os.path.join(args.local_folder, 'minidump')
@@ -1175,7 +1175,7 @@ def sync_logs(args):
         delete_extraneous = False,
         skip_newer_files = False,
         verify_checksums = False,
-        transfer_to_remote = False,
+        upload = False,
     )
 
 
@@ -1554,7 +1554,7 @@ def dump_controller_config(args):
         delete_extraneous = False,
         skip_newer_files = False,
         verify_checksums = False,
-        transfer_to_remote = False,
+        upload = False,
         # doing this way because rsync_transfer only takes in directories
         extra_cmdline = [ '--include=config_*.vdf', '--exclude=*' ]
     )
@@ -1591,7 +1591,7 @@ def sync_pattern(devkit, host_folder, pattern):
         delete_extraneous = False,
         skip_newer_files = False,
         verify_checksums = False,
-        transfer_to_remote = False,
+        upload = False,
         extra_cmdline = pattern,
     )
 
