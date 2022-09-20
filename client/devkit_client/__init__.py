@@ -588,6 +588,7 @@ class DevkitClient(object):
         ipaddress,
         remotedir,
         delete_extraneous = False, # delete extraneous files on the remote
+        skip_newer_files = False, # leave files with a newer modification time untouched, allows local changes on the remote
         verify_checksums = False, # force checksum content verification
         transfer_to_remote = True, # upload to the remote, pass false to download directories
         extra_cmdline = [], # additional command line parms, typically content filtering
@@ -611,7 +612,12 @@ class DevkitClient(object):
         ]
         if delete_extraneous:
             cmd += ['--delete', '--delete-excluded', '--delete-delay']
+        if skip_newer_files:
+            cmd += ['--update']
         if verify_checksums:
+            if skip_newer_files:
+                # UI expected to prevent this
+                logger.warning('WARNING: combining --update and --checksum in rsync command line - may cause unexpected behavior.')
             cmd += ['--checksum']
         cmd += extra_cmdline
         # NOTE: we force folder to folder here with the trailing /
@@ -984,6 +990,7 @@ def new_or_ensure_game(args):
         machine.address,
         destdir,
         delete_extraneous = not args.update,
+        skip_newer_files = False,
         verify_checksums = args.verify_checksums,
         transfer_to_remote = True,
         extra_cmdline = args.filter_args
@@ -1152,6 +1159,7 @@ def sync_logs(args):
         machine.address,
         f'/home/{machine.login}/.local/share/Steam/logs',
         delete_extraneous = False,
+        skip_newer_files = False,
         verify_checksums = False,
         transfer_to_remote = False,
     )
@@ -1165,6 +1173,7 @@ def sync_logs(args):
         machine.address,
         '/tmp/dumps',
         delete_extraneous = False,
+        skip_newer_files = False,
         verify_checksums = False,
         transfer_to_remote = False,
     )
@@ -1543,6 +1552,7 @@ def dump_controller_config(args):
         machine.address,
         '/tmp',
         delete_extraneous = False,
+        skip_newer_files = False,
         verify_checksums = False,
         transfer_to_remote = False,
         # doing this way because rsync_transfer only takes in directories
@@ -1579,6 +1589,7 @@ def sync_pattern(devkit, host_folder, pattern):
         machine.address,
         f'/home/{machine.login}',
         delete_extraneous = False,
+        skip_newer_files = False,
         verify_checksums = False,
         transfer_to_remote = False,
         extra_cmdline = pattern,
