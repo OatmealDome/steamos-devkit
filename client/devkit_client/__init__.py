@@ -587,7 +587,7 @@ class DevkitClient(object):
         user,
         ipaddress,
         remotedir,
-        keep_extra_files = True, # leave extraneous files on the remote untouched
+        delete_extraneous = False, # delete extraneous files on the remote
         verify_checksums = False, # force checksum content verification
         transfer_to_remote = True, # upload to the remote, pass false to download directories
         extra_cmdline = [], # additional command line parms, typically content filtering
@@ -609,7 +609,7 @@ class DevkitClient(object):
                 shlex.quote(self.keypath),
             )
         ]
-        if not keep_extra_files:
+        if delete_extraneous:
             cmd += ['--delete', '--delete-excluded', '--delete-delay']
         if verify_checksums:
             cmd += ['--checksum']
@@ -983,11 +983,11 @@ def new_or_ensure_game(args):
         user,
         machine.address,
         destdir,
-        args.update,
-        args.verify_checksums,
-        True,
-        args.filter_args
-        )
+        delete_extraneous = not args.update,
+        verify_checksums = args.verify_checksums,
+        transfer_to_remote = True,
+        extra_cmdline = args.filter_args
+    )
 
     if args.steam_play_debug != SteamPlayDebug.Disabled:
         if get_remote_debuggers() is not None:
@@ -1001,18 +1001,22 @@ def new_or_ensure_game(args):
             msvsmon_devkit_local_path = os.path.join(ROOT_DIR, 'devkit-msvsmon')
             assert os.path.exists(msvsmon_devkit_local_path)
             msvsmon_remote_path = f'{remote_home}/devkit-msvsmon'
-            client.rsync_transfer(msvsmon_devkit_local_path,
-                                  user,
-                                  machine.address,
-                                  msvsmon_remote_path)
+            client.rsync_transfer(
+                msvsmon_devkit_local_path,
+                user,
+                machine.address,
+                msvsmon_remote_path
+            )
 
             # Transfer the remote debugging tools that will be deployed
             for remote_debugger in get_remote_debuggers():
                 msvsmon_remote_path_sub = f'{remote_home}/devkit-msvsmon/msvsmon{remote_debugger.year}'
-                client.rsync_transfer(remote_debugger.directory,
-                                      user,
-                                      machine.address,
-                                      msvsmon_remote_path_sub)
+                client.rsync_transfer(
+                    remote_debugger.directory,
+                    user,
+                    machine.address,
+                    msvsmon_remote_path_sub
+                )
 
             # Drop in additional webservices.dll to work around a bug in current Proton release
             webservices_x86 = r'C:\Windows\SysWOW64\webservices.dll'
@@ -1147,9 +1151,9 @@ def sync_logs(args):
         machine.login,
         machine.address,
         f'/home/{machine.login}/.local/share/Steam/logs',
-        True,
-        False,
-        False,
+        delete_extraneous = False,
+        verify_checksums = False,
+        transfer_to_remote = False,
     )
 
     local_minidump_folder = os.path.join(args.local_folder, 'minidump')
@@ -1160,9 +1164,9 @@ def sync_logs(args):
         machine.login,
         machine.address,
         '/tmp/dumps',
-        True,
-        False,
-        False,
+        delete_extraneous = False,
+        verify_checksums = False,
+        transfer_to_remote = False,
     )
 
 
@@ -1472,7 +1476,12 @@ def sync_utils(args, machine=None):
     assert os.path.exists(utils_local_path)
     utils_remote_path = '~/devkit-utils'
     logger.info(f'Sync utility scripts to {args.machine}')
-    client.rsync_transfer(utils_local_path, user, machine.address, utils_remote_path)
+    client.rsync_transfer(
+        utils_local_path,
+        user,
+        machine.address,
+        utils_remote_path
+    )
 
 # Returns None to indicate a failure
 def steamos_get_status(args):
@@ -1533,11 +1542,11 @@ def dump_controller_config(args):
         machine.login,
         machine.address,
         '/tmp',
-        True,
-        False,
-        False,
+        delete_extraneous = False,
+        verify_checksums = False,
+        transfer_to_remote = False,
         # doing this way because rsync_transfer only takes in directories
-        [ '--include=config_*.vdf', '--exclude=*' ]
+        extra_cmdline = [ '--include=config_*.vdf', '--exclude=*' ]
     )
     return json_output['success']
 
@@ -1569,9 +1578,9 @@ def sync_pattern(devkit, host_folder, pattern):
         machine.login,
         machine.address,
         f'/home/{machine.login}',
-        True,
-        False,
-        False,
+        delete_extraneous = False,
+        verify_checksums = False,
+        transfer_to_remote = False,
         extra_cmdline = pattern,
     )
 
