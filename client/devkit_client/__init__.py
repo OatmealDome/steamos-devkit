@@ -1358,9 +1358,9 @@ def _obtain_trace(ssh, sftp, args):
         raise Exception('command failed, check console')
 
     sftp.get(remote_trace_file, local_trace_file)
-    # was written by gpu-trace, is owned by root .. sudo
-    # TODO: silently fails now that we run with passworded sudo
-    _simple_ssh(ssh, f'sudo rm {remote_trace_file}', silent=True) # keep /tmp clean
+    # keep /tmp clean - limited space that will quickly fill up otherwise
+    # old gpu-trace uses a permission mask that prevents the deletion - will be fixed soon (9/20/2022)
+    _simple_ssh(ssh, f'rm {remote_trace_file}', silent=True)
 
     return local_trace_file
 
