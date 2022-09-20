@@ -609,8 +609,6 @@ class DevkitClient(object):
                 shlex.quote(self.keypath),
             )
         ]
-        # we don't do checksums, we assume that modification times can be relied upon to speed up incremental transfers
-        cmd.append('--update')
         if not keep_extra_files:
             cmd += ['--delete', '--delete-excluded', '--delete-delay']
         if verify_checksums:
