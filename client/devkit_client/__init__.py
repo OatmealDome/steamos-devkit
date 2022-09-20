@@ -990,7 +990,7 @@ def new_or_ensure_game(args):
         machine.address,
         destdir,
         delete_extraneous = args.delete_extraneous,
-        skip_newer_files = False,
+        skip_newer_files = args.skip_newer_files,
         verify_checksums = args.verify_checksums,
         upload = True,
         extra_cmdline = args.filter_args

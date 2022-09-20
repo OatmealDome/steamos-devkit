@@ -168,7 +168,7 @@ class DevkitCommands:
     def _update_game(self, devkit, restart_steam, gdbserver, steam_play, steam_play_debug, steam_play_debug_version, *args):
 
         class NewGameArgs:
-            def __init__(self, devkit, title_name, local_folder, delete_extraneous, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
+            def __init__(self, devkit, title_name, local_folder, delete_extraneous, skip_newer_files, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
                 self.machine, self.machine_name_type = devkit.machine_command_args
                 self.http_port = devkit.http_port
                 self.name = title_name
@@ -177,6 +177,7 @@ class DevkitCommands:
                 self.argv = start_command
                 self.login = None
                 self.delete_extraneous = delete_extraneous
+                self.skip_newer_files = skip_newer_files
                 self.verify_checksums = verify_checksums
                 self.filter_args = filter_args
                 self.steam_play_debug = SteamPlayDebug.Disabled
@@ -1699,6 +1700,7 @@ class UpdateTitle(ToolWindow):
         dict[f'{prefix}filter_mode'] = self.filter_mode
         dict[f'{prefix}filter_patterns'] = self.filter_patterns
         dict[f'{prefix}delete_remote_files'] = self.delete_remote_files
+        dict[f'{prefix}skip_newer_files'] = self.skip_newer_files
         dict[f'{prefix}verify_checksums'] = self.verify_checksums
         dict[f'{prefix}start_command'] = self.start_command
         dict[f'{prefix}restart_steam'] = self.restart_steam
@@ -1721,6 +1723,7 @@ class UpdateTitle(ToolWindow):
             # this is a bit nasty, we have to copy the list when retrieving from the Settings object, otherwise it's the same pattern for all title configurations
             self.filter_patterns = self.settings.get(f'UpdateTitle.{gameid}.filter_patterns', ['', '', '']).copy()
             self.delete_remote_files = self.settings.get(f'UpdateTitle.{gameid}.delete_remote_files', False)
+            self.skip_newer_files = self.settings.get(f'UpdateTitle.{gameid}.skip_newer_files', False)
             self.verify_checksums = self.settings.get(f'UpdateTitle.{gameid}.verify_checksums', False)
             self.start_command = self.settings.get(f'UpdateTitle.{gameid}.start_command', '')
             self.restart_steam = self.settings.get(f'UpdateTitle.{gameid}.restart_steam', False)
@@ -1769,6 +1772,7 @@ class UpdateTitle(ToolWindow):
         # track the patterns for all three filter modes, only one applies at upload time though
         self.filter_patterns = ['', '', '']
         self.delete_remote_files = False
+        self.skip_newer_files = False
         self.verify_checksums = False
         self.start_command = ''
         self.restart_steam = False
@@ -1877,13 +1881,22 @@ class UpdateTitle(ToolWindow):
 
         imgui.text('Clean upload:')
         imgui.next_column()
-        clicked, v = imgui.checkbox('Delete remote files not present in local folder', self.delete_remote_files)
+        clicked, v = imgui.checkbox('Delete extraneous remote files', self.delete_remote_files)
         if clicked:
             self.delete_remote_files = v
+        imgui.same_line()
+        clicked, v = imgui.checkbox('Allow newer remote files', self.skip_newer_files)
+        if clicked:
+            self.skip_newer_files = v
+            if self.verify_checksums:
+                self.verify_checksums = False
         imgui.same_line()
         clicked, v = imgui.checkbox('Verify checksums', self.verify_checksums)
         if clicked:
             self.verify_checksums = v
+        if self.verify_checksums and self.skip_newer_files:
+            # do not allow both options at the same time, it would still skip newer files and that's confusing
+            self.skip_newer_files = False
         imgui.next_column()
         imgui.text('Start Command:')
         imgui.next_column()
@@ -2081,6 +2094,7 @@ class UpdateTitle(ToolWindow):
             self.title_name,
             self.local_folder,
             self.delete_remote_files,
+            self.skip_newer_files,
             self.verify_checksums,
             [self.start_command],
             filter_args,
