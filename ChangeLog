@@ -1,5 +1,6 @@
 2022-09-20 Timothee Besset <ttimo@valvesoftware.com>
 
+	* Release v0.20220920.0
 	* Title uploads: no longer use --update by default in rsync command lines. Supported as a new option instead (default off).
 	* Title uploads: do not allow --update and --checksum together, as newer files would still be skipped and that's usually not the intent.
 	* Write renderdoc traces to ~/RenderDoc, avoiding problems with limited space in /tmp.
