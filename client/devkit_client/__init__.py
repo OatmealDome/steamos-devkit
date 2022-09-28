@@ -161,8 +161,7 @@ def _locate_remote_debugger(vswhere_path, version):
     # version 16, excluded.
     version_range = f"[{version},{version+1})"
     vs_install_path = subprocess.check_output(
-        [str(vswhere_path), '-latest', '-version', version_range, '-property',
-         'installationPath'],
+        [str(vswhere_path), '-latest', '-version', version_range, '-prerelease', '-property', 'installationPath'],
         universal_newlines=True,
         creationflags=SUBPROCESS_CREATION_FLAGS,
     ).strip('\n')
@@ -180,7 +179,7 @@ def get_remote_debuggers():
     ret = []
     vswhere_path = _locate_vswhere()
     # Look for Visual Studio 15 (2017) and 16 (2019)
-    for version, year in [[15, 2017], [16, 2019]]:
+    for version, year in [[15, 2017], [16, 2019], [17, 2022]]:
         debugger_dir = _locate_remote_debugger(vswhere_path, version)
         if debugger_dir:
             ret.append(RemoteDebugger(debugger_dir, year))
