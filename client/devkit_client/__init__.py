@@ -1432,14 +1432,13 @@ def screenshot(args):
     # wipe any existing screenshot first:
     # - so they don't accumulate in tmpfs
     # - so we can wait and confirm a new screenshot was delivered
-    # TODO: delete .bmp path once we've all upgraded to a gamescope that writes out .png
-    _simple_ssh(ssh, 'rm /tmp/gamescope_*.png /tmp/gamescope_*.bmp', silent=True)
+    _simple_ssh(ssh, 'rm /tmp/gamescope_*.png', silent=True)
     _simple_ssh(ssh, 'kill -USR2 `pidof gamescope`', silent=True, check_status=True)
-    attempts = 10
+    attempts = 50
     while attempts > 0:
         time.sleep(.1)
         attempts -= 1
-        out_text, err_text, exit_status = _simple_ssh(ssh, 'find /tmp -maxdepth 1 -type f -name "gamescope*.png" -or -name "gamescope*.bmp"', silent=True)
+        out_text, err_text, exit_status = _simple_ssh(ssh, 'find /tmp -maxdepth 1 -type f -name "gamescope*.png"', silent=True)
         #logger.debug(f'{out_text!r} {err_text!r} {exit_status}')
         if exit_status == 0 and len(out_text) > 0:
             remote_path = out_text.split('\n')[0]
