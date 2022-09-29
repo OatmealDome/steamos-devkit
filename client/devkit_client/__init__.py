@@ -1042,6 +1042,8 @@ def new_or_ensure_game(args):
                         year = '2017'
                     elif extension_dir.startswith('16.0_'):
                         year = '2019'
+                    elif extension_dir.startswith('17.0_'):
+                        year = '2022'
                     else:
                         continue
                     glob_pattern = os.path.join(extensions_root, extension_dir, 'Extensions')
