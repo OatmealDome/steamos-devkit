@@ -36,8 +36,8 @@ if __name__ == '__main__':
         ret['error'] = skipping
     else:
         with tempfile.TemporaryDirectory(prefix='controller-config') as tempdir:
-            response = os.path.join(tempdir, 'dump-controller-config')
-            cmd = f'dump-controller-config?response={urllib_quote_plus(response)}'
+            response = os.path.join(tempdir, 'dumpcontrollerconfig')
+            cmd = f'dumpcontrollerconfig?response={urllib_quote_plus(response)}'
             if conf.appid:
                 cmd += f'&appid={conf.appid}'
             if conf.gameid:
