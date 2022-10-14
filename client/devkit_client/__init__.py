@@ -453,6 +453,16 @@ def ensure_devkit_key():
         # enforce/fix file permissions
         os.chmod(key_path, 0o400)
         os.chmod(pubkey_path, 0o400)
+    else:
+        # fix permissions for private keys the windows way, keep ssh happy
+        username = os.getenv('username')
+        for cmd in (
+            ['icacls.exe', key_path, '/Inheritance:r'],
+            ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)']
+        ):
+            logger.info(' '.join(cmd))
+            cp = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=devkit_client.SUBPROCESS_CREATION_FLAGS, text=True)
+            logger.info(cp.stdout.strip('\n'))
     return (key, key_path, pubkey_path)
 
 
