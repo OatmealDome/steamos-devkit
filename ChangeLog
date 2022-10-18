@@ -1,7 +1,7 @@
 2022-10-18 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20221018.0
-	* Refactor CEF console support, enable access for Steam partners on public builds
+	* Refactor CEF console support, enable access for Steam partners on public builds.
 
 2022-10-17 Timothee Besset <ttimo@valvesoftware.com>
 
