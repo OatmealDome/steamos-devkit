@@ -72,6 +72,10 @@ class SessionConfig(enum.IntEnum):
     PLASMA_ONCE = 3
     ERROR = 4
 
+def cef_debugging():
+    '''Only sane way to check is to look for the listening port.'''
+    ret = subprocess.run('/usr/bin/ss -l -t -n -p | grep steamwebhelper | grep 8080 > /dev/null', shell=True)
+    return ( ret.returncode == 0 )
 
 def steam_status():
     '''What is the status of the Steam client on the system?'''
@@ -79,21 +83,20 @@ def steam_status():
     if ret.returncode == 1:
         return (SteamStatus.NOT_RUNNING, False)
     s = ret.stdout.strip('\n')
-    # There are now multiple more ways the CEF port is enabled than just checking this command line argument
-    cef_debugging_enabled = ( s.find('-cef-enable-debugging') != -1 )
     if s.find('.local/share/Steam/') != -1:
         if os.path.exists(
             os.path.expanduser('~/devkit-game/devkit-steam')
         ):
             # assume this is OS_DEV (with logging) - to be extra sure we could check the stdout/stderr fds..
-            return (SteamStatus.OS_DEV, cef_debugging_enabled)
-        return (SteamStatus.OS, cef_debugging_enabled)
+            return SteamStatus.OS_DEV
+        return SteamStatus.OS
     if s.find('devkit-game/steam/') != -1:
-        return (SteamStatus.SIDE, cef_debugging_enabled)
+        return SteamStatus.SIDE
     if s.find('devkit-game/steam-vscode/') != -1:
-        return (SteamStatus.VSCODE, cef_debugging_enabled)
+        # not sure this custom VSCode upload path is still valid
+        return SteamStatus.VSCODE
     logger.warning(f'could not interpret pgrep result to determine steam client status: {ret!r}')
-    return (SteamStatus.ERROR, cef_debugging_enabled)
+    return SteamStatus.ERROR
 
 def steam_current_args():
     '''What are the Steam client's arguments?'''
@@ -277,7 +280,10 @@ if __name__ == '__main__':
     # enum -> human readable
     session_status = SESSION_NAMES[session_config] if session_config != SessionConfig.ERROR else 'error'
 
-    steam_status, cef_debugging_enabled = steam_status()
+    steam_status = steam_status()
+    cef_debugging_enabled = False
+    if steam_status != SteamStatus.NOT_RUNNING:
+        cef_debugging_enabled = cef_debugging()
     steam_configuration = steam_configuration()
     osclient_branch = osclient_branch()
     osclient_version = osclient_version()
@@ -295,12 +301,6 @@ if __name__ == '__main__':
             'steam'
         )
     )
-    if has_side_loaded_client:
-        # always report that the CEF debug port is enabled if a side loaded client is present
-        # this covers all the new configurations which enable the CEF port (plus some that do not)
-        # this also fails to mark CEF debug support for Valve devs who have no side loaded client
-        # but the OS client to a main build, e.g. it's still leaky anyway
-        cef_debugging_enabled = True
 
     ret = subprocess.run('/usr/bin/nmcli connection show --active foxnet > /dev/null', shell=True)
     has_foxnet_connectivity = ( ret.returncode == 0 )

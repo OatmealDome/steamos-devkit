@@ -542,6 +542,16 @@ class DevkitCommands:
     def set_renderdoc_replay(self, *args):
         return self.executor.submit(self._set_renderdoc_replay, *args)
 
+    def _enable_cef_debugging(self, devkit):
+        devkit_client.enable_cef_debugging(devkit)
+        self._restart_sddm(devkit)
+        # we put a short wait so the status can pick up the right state
+        time.sleep(5)
+        return self._steamos_get_status(devkit)
+
+    def enable_cef_debugging(self, *args):
+        return self.executor.submit(self._enable_cef_debugging, *args)
+
 class DevkitState(enum.Enum):
     devkit_init = enum.auto()
     devkit_registering = enum.auto()
@@ -1359,9 +1369,8 @@ class DevkitsWindow(ToolWindow):
                         RemoteShell.BUTTON_NAME,
                         RestartSDDM.BUTTON_NAME,
                         BrowseFiles.BUTTON_NAME,
+                        CEFConsole.BUTTON_NAME,
                     ]
-                    if self.selected_devkit.cef_debugging_enabled or self.valve_mode:
-                        active_buttons.append(CEFConsole.BUTTON_NAME)
                 else:
                     # The non-jupiter code path is likely bitrotting fast atm
                     active_buttons = [
@@ -1598,7 +1607,6 @@ class SubTool:
         self.viewport = viewport
         self.toolbar = toolbar
         self.settings = settings
-        self.list_games_future = None
         self.modal_wait = None
 
     def on_draw(self, **kwargs):
@@ -2285,19 +2293,45 @@ class RemoteShell:
 class CEFConsole:
     BUTTON_NAME = 'CEF console'
 
-    def __init__(self, devkit_commands, devkits_window, toolbar):
+    def __init__(self, devkit_commands, devkits_window, viewport, toolbar):
         self.devkit_commands = devkit_commands
         self.devkits_window = devkits_window
+        self.viewport = viewport
         self.toolbar = toolbar
+        self.modal_wait = None
 
     def setup(self):
+        self.viewport.signal_draw.connect(self.on_draw)
         self.toolbar.signal_pressed.connect(self.on_pressed)
+
+    def on_draw(self, **kwargs):
+        if self.modal_wait is None:
+            return
+        if not self.modal_wait.draw():
+            self.modal_wait = None
 
     def on_pressed(self, name, **kwargs):
         if name != self.BUTTON_NAME:
             return
-        f = self.devkit_commands.open_cef_console(self.devkits_window.selected_devkit)
-        f.add_done_callback(self.on_open_cef_console_done)
+        selected_devkit = self.devkits_window.selected_devkit
+        if not selected_devkit.cef_debugging_enabled:
+            enable_cef_debugging_future = self.devkit_commands.enable_cef_debugging(selected_devkit)
+            self.modal_wait = ModalWait(
+                self.viewport,
+                self.toolbar,
+                f'Enable CEF console on {selected_devkit.name!r}',
+                enable_cef_debugging_future,
+                exit_on_success=True
+            )
+            self.modal_wait.override_output_text = 'Enabling CEF console - the Steam client will restart'
+            # delay opening chrome a bit
+            def open_cef_console(_):
+                f = self.devkit_commands.open_cef_console(selected_devkit)
+                f.add_done_callback(self.on_open_cef_console_done)
+            enable_cef_debugging_future.add_done_callback(open_cef_console)
+        else:
+            f = self.devkit_commands.open_cef_console(selected_devkit)
+            f.add_done_callback(self.on_open_cef_console_done)
 
     def on_open_cef_console_done(self, f):
         try:
@@ -3342,7 +3376,7 @@ def main():
     update_title.setup()
     view_steam_logs = DeviceLogs(devkit_commands, devkits_window, settings, viewport, toolbar)
     view_steam_logs.setup()
-    cef_console = CEFConsole(devkit_commands, devkits_window, toolbar)
+    cef_console = CEFConsole(devkit_commands, devkits_window, viewport, toolbar)
     cef_console.setup()
     remote_shell = RemoteShell(devkit_commands, devkits_window, toolbar)
     remote_shell.setup()

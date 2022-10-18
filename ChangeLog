@@ -1,6 +1,10 @@
+2022-10-18 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20221018.0
+	* Refactor CEF console support, enable access for Steam partners on public builds
+
 2022-10-17 Timothee Besset <ttimo@valvesoftware.com>
 
-	* Release v0.20221017.0
 	* Enable Visual Studio 2022 remote debugging.
 	* Increase screenshot timeout, fixing a problem for 4K screenshots.
 

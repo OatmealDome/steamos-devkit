@@ -1611,3 +1611,7 @@ def set_renderdoc_replay(devkit, enable):
     if enable:
         # renderdoccmd adds a 'RenderDoc/' subfolder..
         _simple_ssh(ssh, f'RENDERDOC_TEMP=/home/{machine.login} renderdoccmd remoteserver -d', silent=True, check_status=True)
+
+def enable_cef_debugging(devkit):
+    ssh = _open_ssh_for_args(ResolveMachineArgs(devkit))
+    _simple_ssh(ssh, 'touch ~/.steam/steam/.cef-enable-remote-debugging')
