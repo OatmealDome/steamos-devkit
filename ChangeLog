@@ -1,3 +1,8 @@
+2022-10-19 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20221019.0
+	* Several fixes for Windows relating to the ssh key permission management.
+
 2022-10-18 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20221018.0
