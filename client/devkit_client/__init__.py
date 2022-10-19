@@ -119,6 +119,30 @@ if platform.system() == 'Windows':
 g_remote_debuggers = None
 g_external_tools = None
 
+# This burned me twice now .. https://twitter.com/TTimo/status/1582509449838989313
+from os import getenv as os_getenv
+def getenv_monkey(key, default=None):
+    if key.upper() in ('USER', 'USERNAME'):
+        raise Exception('Never rely on USERNAME out of the environment! Some Windows system do not have it set (?!?). Use get_username instead.')
+    return os_getenv(key, default)
+os.getenv = getenv_monkey
+
+def get_username():
+    if platform.system() != 'Windows':
+        return os_getenv('USER')
+    USERNAME = os_getenv('USERNAME')
+    if USERNAME is None:
+        try:
+            # I don't trust this module, especially under cx_Freeze, so only do a late import
+            logger.warning('USERNAME environment variable is not set, trying from win32api - please fix!!')
+            import win32api
+            USERNAME = win32api.GetUserName()
+            logger.warning(f'Obtained USERNAME from win32api: {USERNAME}')
+        except Exception as e:
+            log_exception(e)
+            raise Exception('Unable to obtain USERNAME on this system. We should stop now.')
+    return USERNAME
+
 
 class ResolveMachineArgs:
     def __init__(self, devkit):
@@ -220,21 +244,6 @@ def locate_external_tools():
     cygpath = _locate_external_tool('cygpath.exe')
     ssh = _locate_external_tool('ssh.exe')
     rsync = _locate_external_tool('rsync.exe')
-
-    # we used to require USERNAME being set - but not anymore
-    # still, since I don't know of legitimate Window configurations where USERNAME wouldn't be set,
-    # I'm leaving this check so there is at least a warning about this
-    USERNAME = os.getenv('USERNAME')
-    if USERNAME is None:
-        try:
-            # I don't trust this module, especially under cx_Freeze, so only do a late import
-            logger.warning('USERNAME is empty, trying from win32api')
-            import win32api
-            USERNAME = win32api.GetUserName()
-            logger.warning(f'Obtained USERNAME from win32api: {USERNAME}')
-        except Exception as e:
-            log_exception(e)
-            logger.error(f'USERNAME environment variable is not set on this system.')
 
     USERPROFILE = os.getenv('USERPROFILE')
     if USERPROFILE is None:
@@ -445,6 +454,10 @@ def ensure_devkit_key():
             os.makedirs(key_folder)
         except (FileExistsError):
             pass
+        # the key may not be writable, so make sure to delete first (on Windows espcially with our iacls.exe dance)
+        for p in (key_path, pubkey_path):
+            if os.path.exists(p):
+                os.unlink(p)
         key = paramiko.RSAKey.generate(2048)
         key.write_private_key_file(key_path)
         o = open(pubkey_path, 'w')
@@ -455,8 +468,9 @@ def ensure_devkit_key():
         os.chmod(pubkey_path, 0o400)
     else:
         # fix permissions for private keys the windows way, keep ssh happy
-        username = os.getenv('username')
+        username = get_username()
         for cmd in (
+            ['icacls.exe', key_path, '/Reset'],
             ['icacls.exe', key_path, '/Inheritance:r'],
             ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)']
         ):
