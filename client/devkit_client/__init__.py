@@ -131,7 +131,7 @@ def get_username():
     if platform.system() != 'Windows':
         return os_getenv('USER')
     USERNAME = os_getenv('USERNAME')
-    if USERNAME is None:
+    if USERNAME is None or len(USERNAME) == 0:
         try:
             # I don't trust this module, especially under cx_Freeze, so only do a late import
             logger.warning('USERNAME environment variable is not set, trying from win32api - please fix!!')
@@ -142,6 +142,9 @@ def get_username():
             log_exception(e)
             raise Exception('Unable to obtain USERNAME on this system. We should stop now.')
     return USERNAME
+
+def windows_get_domain_and_name():
+    return subprocess.check_output('whoami', universal_newlines=True).strip('\n')
 
 
 class ResolveMachineArgs:
@@ -450,6 +453,7 @@ def ensure_devkit_key():
     try:
         key = paramiko.RSAKey.from_private_key_file(key_path)
     except (IOError, FileNotFoundError):
+        logger.info(f'generating a new passwordless devkit key in {key_path}')
         try:
             os.makedirs(key_folder)
         except (FileExistsError):
@@ -468,11 +472,16 @@ def ensure_devkit_key():
         os.chmod(pubkey_path, 0o400)
     else:
         # fix permissions for private keys the windows way, keep ssh happy
-        username = get_username()
+        # do not rely on get_username here, use the full domain\name of the current user - some systems fail if you just give username
+        # also icacls.exe docs suggest this should work with the SID, but that will fail with "No mapping between account names and security IDs was done."
+        # I really hate everything about this ...
+        username = windows_get_domain_and_name()
         for cmd in (
             ['icacls.exe', key_path, '/Reset'],
             ['icacls.exe', key_path, '/Inheritance:r'],
-            ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)']
+            ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)'],
+            # for diagnostics
+            ['icacls.exe', key_path],
         ):
             logger.info(' '.join(cmd))
             cp = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=devkit_client.SUBPROCESS_CREATION_FLAGS, text=True)
