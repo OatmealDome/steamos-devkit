@@ -81,7 +81,7 @@ def steam_status():
     '''What is the status of the Steam client on the system?'''
     ret = subprocess.run(['pgrep', '-a', '-x', 'steam'], capture_output=True, text=True)
     if ret.returncode == 1:
-        return (SteamStatus.NOT_RUNNING, False)
+        return SteamStatus.NOT_RUNNING
     s = ret.stdout.strip('\n')
     if s.find('.local/share/Steam/') != -1:
         if os.path.exists(
