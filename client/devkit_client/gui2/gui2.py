@@ -167,6 +167,11 @@ class DevkitCommands:
 
     def _update_game(self, devkit, restart_steam, gdbserver, steam_play, steam_play_debug, steam_play_debug_version, *args):
 
+        if not devkit.is_steamdeck:
+            # pretty rare, worth a mention
+            logger.info('Not connected to a Deck - forcing restart steam flag off')
+            restart_steam = False
+
         class NewGameArgs:
             def __init__(self, devkit, title_name, local_folder, delete_extraneous, skip_newer_files, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
                 self.machine, self.machine_name_type = devkit.machine_command_args
@@ -199,6 +204,7 @@ class DevkitCommands:
         if not result:
             raise Exception("new_or_ensure_game command failed, check console")
         if restart_steam:
+            assert new_game_args.name.lower() == 'steam'
             # side loaded Steam client:
             # new_game_args.argv is a single string wrapped in a list (one element), and is the full command to execute
             command = ' '.join(new_game_args.argv)
@@ -1783,7 +1789,8 @@ class UpdateTitle(ToolWindow):
         self.skip_newer_files = False
         self.verify_checksums = False
         self.start_command = ''
-        self.restart_steam = False
+        # Little reason not to - questioning why that's an option at all. More like a UX thing to make it clear that Steam will restart.
+        self.restart_steam = True
         self.steam_play = False
         self.steam_play_debug = False
         self.steam_play_debug_wait = False
@@ -2012,8 +2019,6 @@ class UpdateTitle(ToolWindow):
             imgui.next_column()
             if clicked:
                 self.gdbserver = v
-        else:
-            self.restart_steam = False
 
         imgui.text('Auto upload:')
         imgui.next_column()
