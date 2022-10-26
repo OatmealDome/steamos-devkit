@@ -247,17 +247,17 @@ if __name__ == '__main__':
 
     os_info = get_os_info()
     assert os_info is not None
-    jupiter = ( os_info.get('VARIANT_ID', None) in ( 'jupiter', 'steamdeck' ) )
+    steamdeck = os_info.get('VARIANT_ID', None) == 'steamdeck'
     os_name = os_info.get('PRETTY_NAME', None)
     os_version = os_info.get('BUILD_ID', None)
 
     _steam_launch_flags = steam_launch_flags()
 
-    if not jupiter:
+    if not steamdeck:
         # the rest of this script pulls status info that is very specific to Jupiter
         if conf.json:
             ret = {
-                'jupiter': jupiter,
+                'steamdeck': steamdeck,
                 'os_name': os_name,
                 'os_version': os_version,
                 'os_info': os_info,
@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
     if conf.json:
         ret = {
-            'jupiter': jupiter,
+            'steamdeck': steamdeck,
             'os_name': os_name,
             'os_version': os_version,
             'os_info': os_info,

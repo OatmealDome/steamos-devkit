@@ -630,8 +630,8 @@ class Devkit:
 
     # Uploading and debugging a side loaded Steam client - only relevant to Valve
     @property
-    def is_jupiter(self):
-        return self.steamos_status.get('jupiter', False)
+    def is_steamdeck(self):
+        return self.steamos_status.get('steamdeck', False)
 
     @property
     def http_port(self):
@@ -1336,11 +1336,11 @@ class DevkitsWindow(ToolWindow):
             counter = 0
             for kit in online_kits:
                 description = kit.full_name
-                if kit.is_jupiter:
-                    description += f' Jupiter OS: {kit.os_version}'
+                if kit.is_steamdeck:
+                    description += f' Deck OS: {kit.os_version}'
                 else:
                     description += f' OS: {kit.os_name}'
-                if kit.is_jupiter and not kit.user_password_is_set:
+                if kit.is_steamdeck and not kit.user_password_is_set:
                     description += f' - user password is not set'
 
                 clicked, _ = imgui.checkbox(description, kit.name == self._selected_devkit_name)
@@ -1361,7 +1361,7 @@ class DevkitsWindow(ToolWindow):
                         return
                 counter += 1
             if self.selected_devkit is not None:
-                if self.selected_devkit.is_jupiter:
+                if self.selected_devkit.is_steamdeck:
                     active_buttons = [
                         RefreshStatus.BUTTON_NAME,
                         ListTitles.BUTTON_NAME,
@@ -1388,7 +1388,7 @@ class DevkitsWindow(ToolWindow):
 
             steamos_status = self.selected_devkit.steamos_status
             assert steamos_status is not None
-            if self.selected_devkit.is_jupiter:
+            if self.selected_devkit.is_steamdeck:
                 # === gamescope / plasma session select ========================================
                 ljust=24
                 if self.valve_mode:
@@ -1485,7 +1485,7 @@ class DevkitsWindow(ToolWindow):
                 imgui.separator()
 
             subtool_list = []
-            if self.selected_devkit.is_jupiter:
+            if self.selected_devkit.is_steamdeck:
                 # subtools requiring some amount of device side support, which we only enable against the deck
                 subtool_list += [
                     self.screenshot,
@@ -1999,7 +1999,7 @@ class UpdateTitle(ToolWindow):
         else:
             self.steam_play = False
 
-        if self.devkits_window.selected_devkit.is_jupiter and self.title_name.lower() == 'steam':
+        if self.devkits_window.selected_devkit.is_steamdeck and self.title_name.lower() == 'steam':
             imgui.text('Restart:')
             imgui.next_column()
             clicked, v = imgui.checkbox('Restart Steam side loaded client on upload', self.restart_steam)
@@ -2848,7 +2848,7 @@ class DeleteTitle(SubTool):
         changed, v = imgui.checkbox('Delete all devkit titles', self.settings[self.DELETE_ALL_KEY])
         if changed:
             self.settings[self.DELETE_ALL_KEY] = v
-        if selected_devkit.is_jupiter:
+        if selected_devkit.is_steamdeck:
             imgui.same_line()
             changed, v = imgui.checkbox('Delete local Steam content + reset client', self.settings[self.RESET_STEAM_KEY])
             if changed:
