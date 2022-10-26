@@ -2318,31 +2318,50 @@ class CEFConsole:
     def on_pressed(self, name, **kwargs):
         if name != self.BUTTON_NAME:
             return
-        selected_devkit = self.devkits_window.selected_devkit
-        if not selected_devkit.cef_debugging_enabled:
-            enable_cef_debugging_future = self.devkit_commands.enable_cef_debugging(selected_devkit)
-            self.modal_wait = ModalWait(
-                self.viewport,
-                self.toolbar,
-                f'Enable CEF console on {selected_devkit.name!r}',
-                enable_cef_debugging_future,
-                exit_on_success=True
-            )
-            self.modal_wait.override_output_text = 'Enabling CEF console - the Steam client will restart'
-            # delay opening chrome a bit
-            def open_cef_console(_):
-                f = self.devkit_commands.open_cef_console(selected_devkit)
-                f.add_done_callback(self.on_open_cef_console_done)
-            enable_cef_debugging_future.add_done_callback(open_cef_console)
-        else:
-            f = self.devkit_commands.open_cef_console(selected_devkit)
-            f.add_done_callback(self.on_open_cef_console_done)
 
-    def on_open_cef_console_done(self, f):
-        try:
-            f.result()
-        except Exception as e:
-            devkit_client.log_exception(e)
+        selected_devkit = self.devkits_window.selected_devkit
+        # forcing a refresh so have accurate status is better than risking an out of date steam client restart
+        status_future = self.devkit_commands.steamos_get_status(selected_devkit)
+        self.modal_wait = ModalWait(
+            self.viewport,
+            self.toolbar,
+            f'Refresh device status {selected_devkit.name!r}',
+            status_future,
+            exit_on_success=True
+        )
+
+        def on_status_refreshed(self, f):
+            try:
+                f.result()
+            except Exception as e:
+                devkit_client.log_exception(e)
+
+            def on_open_cef_console_done(self, f):
+                try:
+                    f.result()
+                except Exception as e:
+                    devkit_client.log_exception(e)
+
+            if not selected_devkit.cef_debugging_enabled:
+                enable_cef_debugging_future = self.devkit_commands.enable_cef_debugging(selected_devkit)
+                self.modal_wait = ModalWait(
+                    self.viewport,
+                    self.toolbar,
+                    f'Enable CEF console on {selected_devkit.name!r}',
+                    enable_cef_debugging_future,
+                    exit_on_success=True
+                )
+                self.modal_wait.override_output_text = 'Enabling CEF console - the Steam client will restart'
+                # delay opening chrome a bit
+                def open_cef_console(_):
+                    f = self.devkit_commands.open_cef_console(selected_devkit)
+                    f.add_done_callback(functools.partial(on_open_cef_console_done, self))
+                enable_cef_debugging_future.add_done_callback(open_cef_console)
+            else:
+                f = self.devkit_commands.open_cef_console(selected_devkit)
+                f.add_done_callback(functools.partial(on_open_cef_console_done, self))
+
+        status_future.add_done_callback(functools.partial(on_status_refreshed, self))
 
 
 class Screenshot(SubTool):
