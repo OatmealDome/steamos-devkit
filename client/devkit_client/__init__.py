@@ -1293,7 +1293,7 @@ Start-Sleep -Seconds 3
 """
             batch.write(cmd)
             batch.flush()
-            commands = ['powershell.exe', '-ExecutionPolicy', 'Bypass', batch.name]
+            commands = [shutil.which('powershell.exe'), '-ExecutionPolicy', 'Bypass', batch.name]
         # ensures we get a separate console when running out of a shell with pipenv
         creationflags=subprocess.CREATE_NEW_CONSOLE
     else:
