@@ -45,7 +45,6 @@ import socket
 import string
 import subprocess
 import time
-from threading import Thread
 import unicodedata
 import urllib
 import urllib.parse
@@ -55,6 +54,7 @@ import webbrowser
 import tempfile
 import pathlib
 import re
+import threading
 
 import appdirs
 
@@ -118,6 +118,7 @@ if platform.system() == 'Windows':
 
 g_remote_debuggers = None
 g_external_tools = None
+g_lock = threading.Lock()
 
 # This burned me twice now .. https://twitter.com/TTimo/status/1582509449838989313
 from os import getenv as os_getenv
@@ -447,46 +448,51 @@ def get_public_key(key):
 
 
 def ensure_devkit_key():
-    key_folder = appdirs.user_config_dir('steamos-devkit')
-    key_path = os.path.join(key_folder, 'devkit_rsa')
-    pubkey_path = os.path.join(key_folder, 'devkit_rsa.pub')
-    try:
-        key = paramiko.RSAKey.from_private_key_file(key_path)
-    except (IOError, FileNotFoundError):
-        logger.info(f'generating a new passwordless devkit key in {key_path}')
+    # this is called from threads and needs to be marshalled due to possible fs and permissions manipulations
+    global g_lock
+    with g_lock:
+        key_folder = appdirs.user_config_dir('steamos-devkit')
+        key_path = os.path.join(key_folder, 'devkit_rsa')
+        pubkey_path = os.path.join(key_folder, 'devkit_rsa.pub')
         try:
-            os.makedirs(key_folder)
-        except (FileExistsError):
-            pass
-        # the key may not be writable, so make sure to delete first (on Windows espcially with our iacls.exe dance)
-        for p in (key_path, pubkey_path):
-            if os.path.exists(p):
-                os.unlink(p)
-        key = paramiko.RSAKey.generate(2048)
-        key.write_private_key_file(key_path)
-        o = open(pubkey_path, 'w')
-        o.write(get_public_key(key))
-    if platform.system() == 'Linux':
-        # enforce/fix file permissions
-        os.chmod(key_path, 0o400)
-        os.chmod(pubkey_path, 0o400)
-    else:
-        # fix permissions for private keys the windows way, keep ssh happy
-        # do not rely on get_username here, use the full domain\name of the current user - some systems fail if you just give username
-        # also icacls.exe docs suggest this should work with the SID, but that will fail with "No mapping between account names and security IDs was done."
-        # I really hate everything about this ...
-        username = windows_get_domain_and_name()
-        for cmd in (
-            ['icacls.exe', key_path, '/Reset'],
-            ['icacls.exe', key_path, '/Inheritance:r'],
-            ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)'],
-            # for diagnostics
-            ['icacls.exe', key_path],
-        ):
-            logger.info(' '.join(cmd))
-            cp = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=devkit_client.SUBPROCESS_CREATION_FLAGS, text=True)
-            logger.info(cp.stdout.strip('\n'))
-    return (key, key_path, pubkey_path)
+            key = paramiko.RSAKey.from_private_key_file(key_path)
+        except FileNotFoundError:
+            # first time setup
+            logger.warning(f'{key_path} not found - generating a new passwordless devkit key')
+            os.makedirs(key_folder, exist_ok=True)
+            # the key may not be writable, so make sure to delete first (on Windows espcially with our iacls.exe dance)
+            for p in (key_path, pubkey_path):
+                if os.path.exists(p):
+                    os.unlink(p)
+            key = paramiko.RSAKey.generate(2048)
+            key.write_private_key_file(key_path)
+            o = open(pubkey_path, 'w')
+            o.write(get_public_key(key))
+        if platform.system() == 'Linux':
+            # enforce/fix file permissions
+            os.chmod(key_path, 0o400)
+            os.chmod(pubkey_path, 0o400)
+        else:
+            # fix permissions for private keys the windows way, keep ssh happy
+            # do not rely on get_username here, use the full domain\name of the current user - some systems fail if you just give username
+            # also icacls.exe docs suggest this should work with the SID, but that will fail with "No mapping between account names and security IDs was done."
+            # I really hate everything about this ...
+            username = windows_get_domain_and_name()
+            for cmd in (
+                ['icacls.exe', key_path, '/Reset'],
+                ['icacls.exe', key_path, '/Inheritance:r'],
+                ['icacls.exe', key_path, '/Grant:r', f'{username}:(R)'],
+                # for diagnostics
+                ['icacls.exe', key_path],
+            ):
+                cp = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=devkit_client.SUBPROCESS_CREATION_FLAGS, text=True)
+                if cp.returncode == 0:
+                    logger.debug(' '.join(cmd))
+                    logger.debug(cp.stdout.strip('\n'))
+                else:
+                    logger.warning(' '.join(cmd))
+                    logger.warning(cp.stdout.strip('\n'))
+        return (key, key_path, pubkey_path)
 
 
 class DevkitClient(object):
@@ -562,16 +568,16 @@ class DevkitClient(object):
         stdin, stdout, stderr = ssh.exec_command(command)
         chan = stdout.channel
 
-        stderr_thread = Thread(target=stream_copy_logger,
+        stderr_thread = threading.Thread(target=stream_copy_logger,
                                args=(stderr, logger))
         stderr_thread.start()
         if stream_output_to is not None:
-            stdout_thread = Thread(
+            stdout_thread = threading.Thread(
                 target=stream_byte_copy_thread,
                 args=(stdout, stream_output_to))
         else:
             # stdout will be json data
-            stdout_thread = Thread(
+            stdout_thread = threading.Thread(
                 target=self.machine_readable_command_reader_thread,
                 args=(stdout,))
 
