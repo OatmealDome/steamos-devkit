@@ -392,7 +392,7 @@ class ServiceListener(object):
         info = self.r.get_service_info(type, name, timeout=ZEROCONF_TIMEOUT)
         get_service_delay = time.perf_counter() - get_service_delay
         if not self.quiet:
-            logger.debug(f'zeroconf.get_service_info: {get_service_delay:.1f}')
+            logger.debug(f'zeroconf.get_service_info delay: {get_service_delay:.1f}')
         if info:
             if not self.quiet:
                 logger.info(
@@ -408,15 +408,19 @@ class ServiceListener(object):
                     logger.info("  Properties are:")
                     for key, value in prop.items():
                         logger.info("    %s: %s", key, value)
-
                 if b'txtvers' in prop and prop[b'txtvers'] != CURRENT_TXTVERS:
                     logger.warning(
                         'Incompatible txtvers %r, ignoring %s',
                         prop[b'txtvers'], service_name)
                     return
-
-            self.devkits[service_name] = info
-            self.devkit_events.put(('add', service_name))
+            if service_name in self.devkits:
+                logger.info(f'updating {service_name}')
+                self.devkits[service_name] = info
+                self.devkit_events.put(('update', service_name))
+            else:
+                logger.info(f'adding {service_name}')
+                self.devkits[service_name] = info
+                self.devkit_events.put(('add', service_name))
 
     def address_for_service(self, name):
         if not name in self.devkits:
@@ -431,7 +435,7 @@ class ServiceListener(object):
         return info.port
 
     def update_service(self, *args):
-        pass
+        self.add_service(*args)
 
 
 def get_public_key_comment():
