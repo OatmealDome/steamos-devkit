@@ -1261,6 +1261,17 @@ class DevkitsWindow(ToolWindow):
                 imgui.same_line()
                 if kit.state == DevkitState.devkit_init:
                     imgui.text('Initializing...')
+                    # give an opportunity to quickly delete IP kits during the slow init and retry
+                    if kit.added_by_ip:
+                        imgui.same_line()
+                        if imgui.button(f'Forget IP kit##init_{buttons_index}'):
+                            if kit.init_future is not None:
+                                # likely won't do anything since the executor thread is already running
+                                # no way to cancel the thread or the on_init_done callback
+                                # so that still finishes in the background but so far isn't causing problems
+                                kit.init_future.cancel()
+                            kit.forget_added_by_ip()
+                            del self.devkits[kit.name]
                 elif kit.state == DevkitState.devkit_registering:
                     imgui.text('Registering...')
                 elif kit.state == DevkitState.devkit_not_registered:
