@@ -120,6 +120,7 @@ g_remote_debuggers = None
 g_external_tools = None
 g_lock = threading.Lock()
 
+
 # This burned me twice now .. https://twitter.com/TTimo/status/1582509449838989313
 from os import getenv as os_getenv
 def getenv_monkey(key, default=None):
@@ -145,7 +146,11 @@ def get_username():
     return USERNAME
 
 def windows_get_domain_and_name():
-    return subprocess.check_output('whoami', universal_newlines=True).strip('\n')
+    return subprocess.check_output(
+        'whoami',
+        text=True,
+        creationflags=SUBPROCESS_CREATION_FLAGS,
+    ).strip('\n')
 
 
 class ResolveMachineArgs:
@@ -190,7 +195,7 @@ def _locate_remote_debugger(vswhere_path, version):
     version_range = f"[{version},{version+1})"
     vs_install_path = subprocess.check_output(
         [str(vswhere_path), '-latest', '-version', version_range, '-prerelease', '-property', 'installationPath'],
-        universal_newlines=True,
+        text=True,
         creationflags=SUBPROCESS_CREATION_FLAGS,
     ).strip('\n')
     if not vs_install_path:
@@ -489,7 +494,14 @@ def ensure_devkit_key():
                 # for diagnostics
                 ['icacls.exe', key_path],
             ):
-                cp = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=devkit_client.SUBPROCESS_CREATION_FLAGS, text=True)
+                cp = subprocess.run(
+                    cmd,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    creationflags=SUBPROCESS_CREATION_FLAGS,
+                    text=True
+                )
                 if cp.returncode == 0:
                     logger.debug(' '.join(cmd))
                     logger.debug(cp.stdout.strip('\n'))
@@ -543,7 +555,7 @@ class DevkitClient(object):
         cmd.append(command)
         exit_status = subprocess.call(
             cmd,
-            creationflags = SUBPROCESS_CREATION_FLAGS
+            creationflags=SUBPROCESS_CREATION_FLAGS
         )
 
         logger.info("exit status is %d", exit_status)
