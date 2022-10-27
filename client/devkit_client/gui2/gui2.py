@@ -1184,10 +1184,14 @@ class DevkitsWindow(ToolWindow):
         # === logic tick ===============================================================
         while not self.zc_listener.devkit_events.empty():
             op, service_name = self.zc_listener.devkit_events.get()
-            if op in ('add', 'update'):
+            if op == 'add':
                 devkit = Devkit(self.devkit_commands, self.settings, zc_listener=self.zc_listener, service_name=service_name)
                 devkit.setup()
                 self.devkits[devkit.name] = devkit
+            elif op == 'update':
+                # not doing anything or trying to run setup again
+                # probably an IP change, which is already reflected in the zc_listener
+                pass
             else:
                 assert op == 'del'
                 del self.devkits[service_name]
