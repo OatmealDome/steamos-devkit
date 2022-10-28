@@ -12,7 +12,7 @@ Install misc utilities:
 Install Python 3.10:
 
 # These options install into c:\Python310 for all users
-- `choco install python --version 3.10.3 --params "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\Python310'"`
+- `choco install python --version 3.10.7 --params "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\Python310'"`
 
 Python will install to C:\Python30. Restart the shell to pickup it up.
 

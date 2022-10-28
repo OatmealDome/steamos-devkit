@@ -1293,7 +1293,15 @@ Start-Sleep -Seconds 3
 """
             batch.write(cmd)
             batch.flush()
-            commands = [shutil.which('powershell.exe'), '-ExecutionPolicy', 'Bypass', batch.name]
+            # cx_Freeze broke things in 6.12
+            # https://github.com/marcelotduarte/cx_Freeze/pull/1659
+            powershell_path = shutil.which('powershell.exe')
+            if powershell_path is None:
+                logger.warning(f'shutil.which powershell.exe failed: {os.environ["PATH"]!r}')
+                powershell_path = r'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+                if not os.path.exists(powershell_path):
+                    raise Exception('Could not locate powershell.exe. shutil.which failed, not at default location.')
+            commands = [powershell_path, '-ExecutionPolicy', 'Bypass', batch.name]
         # ensures we get a separate console when running out of a shell with pipenv
         creationflags=subprocess.CREATE_NEW_CONSOLE
     else:
