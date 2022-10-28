@@ -3,7 +3,7 @@
 	* Release v0.20221028.0
 	* Improve CEF console button to restart the Steam client less.
 	* More fixes to the devkit ssh key creation and permission checks.
-	* Improve handling of docker decks that have multiple IPs.
+	* Improve handling of docked decks that have multiple IPs.
 
 2022-10-19 Timothee Besset <ttimo@valvesoftware.com>
 
