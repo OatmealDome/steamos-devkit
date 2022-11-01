@@ -212,18 +212,6 @@ class DevkitCommands:
     def update_game(self, *args):
         return self.executor.submit(self._update_game, *args)
 
-    def _restart_steam(self, devkit):
-        class RestartArgs:
-            def __init__(self, devkit):
-                self.machine, self.machine_name_type = devkit.machine_command_args
-
-        restart_args = RestartArgs(devkit)
-        devkit_client.restart_steam_client(restart_args)
-        return True
-
-    def restart_steam(self, devkit):
-        return self.executor.submit(self._restart_steam, devkit)
-
     def _set_steam_client(self, devkit, title_name, command, args, wait, gdbserver):
         class SetSteamClientArgs:
             def __init__(self, devkit, title_name, command, args, gdbserver):
