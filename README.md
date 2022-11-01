@@ -19,7 +19,7 @@ Python will install to C:\Python30. Restart the shell to pickup it up.
 Run the following:
 
 - `python -m pip install --upgrade pip`
-- `pip install --upgrade setuptools`
+- `python -m pip install --upgrade setuptools`
 
 Install the Microsoft Visual C++ compiler, per https://wiki.python.org/moin/WindowsCompilers:
 
@@ -46,7 +46,7 @@ From your checkout of steamos-devkit:
 Start by updating base tools:
 
 - `python -m pip install --upgrade pip`
-- `pip install --upgrade setuptools`
+- `python -m pip install --upgrade setuptools`
 
 Install project dependencies:
 
