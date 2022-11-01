@@ -1,3 +1,8 @@
+2022-11-01 Timothee Besset <ttimo@valvesoftware.com>
+
+	* Release v0.20221101.0
+	* Fixed: game uploads were trying to restart the steam client, which should only happen for steam side loaded client uploads.
+
 2022-10-28 Timothee Besset <ttimo@valvesoftware.com>
 
 	* Release v0.20221028.0
