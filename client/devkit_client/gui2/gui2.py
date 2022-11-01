@@ -167,11 +167,6 @@ class DevkitCommands:
 
     def _update_game(self, devkit, restart_steam, gdbserver, steam_play, steam_play_debug, steam_play_debug_version, *args):
 
-        if not devkit.is_steamdeck:
-            # pretty rare, worth a mention
-            logger.info('Not connected to a Deck - forcing restart steam flag off')
-            restart_steam = False
-
         class NewGameArgs:
             def __init__(self, devkit, title_name, local_folder, delete_extraneous, skip_newer_files, verify_checksums, start_command, filter_args, dependencies, cancel_signal):
                 self.machine, self.machine_name_type = devkit.machine_command_args
@@ -203,12 +198,15 @@ class DevkitCommands:
         result = devkit_client.new_or_ensure_game(new_game_args)
         if not result:
             raise Exception("new_or_ensure_game command failed, check console")
-        if restart_steam:
-            assert new_game_args.name.lower() == 'steam'
-            # side loaded Steam client:
-            # new_game_args.argv is a single string wrapped in a list (one element), and is the full command to execute
-            command = ' '.join(new_game_args.argv)
-            self._set_steam_client(devkit, 'SteamStatus.SIDE', command, None, True, gdbserver)
+        if new_game_args.name.lower() == 'steam' and restart_steam:
+            if not devkit.is_steamdeck:
+                # pretty rare, worth a mention
+                logger.info('Not connected to a Deck - ignoring restart steam flag')
+            else:
+                # side loaded Steam client:
+                # new_game_args.argv is a single string wrapped in a list (one element), and is the full command to execute
+                command = ' '.join(new_game_args.argv)
+                self._set_steam_client(devkit, 'SteamStatus.SIDE', command, None, True, gdbserver)
         return True
 
     def update_game(self, *args):
@@ -1801,7 +1799,7 @@ class UpdateTitle(ToolWindow):
         self.skip_newer_files = False
         self.verify_checksums = False
         self.start_command = ''
-        # Little reason not to - questioning why that's an option at all. More like a UX thing to make it clear that Steam will restart.
+        # This option only affects Steam side loaded client uploads, which is a Valve only feature
         self.restart_steam = True
         self.steam_play = False
         self.steam_play_debug = False
