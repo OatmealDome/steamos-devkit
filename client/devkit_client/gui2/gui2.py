@@ -2307,31 +2307,13 @@ class RemoteShell:
             devkit_client.log_exception(e)
 
 
-class CEFConsole:
+class CEFConsole(SubTool):
     BUTTON_NAME = 'CEF console'
 
-    def __init__(self, devkit_commands, devkits_window, viewport, toolbar):
-        self.devkit_commands = devkit_commands
-        self.devkits_window = devkits_window
-        self.viewport = viewport
-        self.toolbar = toolbar
-        self.modal_wait = None
-
-    def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
-        self.toolbar.signal_pressed.connect(self.on_pressed)
-
-    def on_draw(self, **kwargs):
-        if self.modal_wait is None:
-            return
-        if not self.modal_wait.draw():
-            self.modal_wait = None
-
-    def on_pressed(self, name, **kwargs):
+    def on_pressed(self, name, selected_devkit, **kwargs):
         if name != self.BUTTON_NAME:
             return
 
-        selected_devkit = self.devkits_window.selected_devkit
         # forcing a refresh so have accurate status is better than risking an out of date steam client restart
         status_future = self.devkit_commands.steamos_get_status(selected_devkit)
         self.modal_wait = ModalWait(
@@ -3368,6 +3350,8 @@ def main():
     browse_files.setup()
     change_password = ChangePassword(devkit_commands, viewport, toolbar, settings)
     change_password.setup()
+    cef_console = CEFConsole(devkit_commands, viewport, toolbar, settings)
+    cef_console.setup()
 
     devkits_window = DevkitsWindow(
         conf,
@@ -3400,8 +3384,6 @@ def main():
     update_title.setup()
     view_steam_logs = DeviceLogs(devkit_commands, devkits_window, settings, viewport, toolbar)
     view_steam_logs.setup()
-    cef_console = CEFConsole(devkit_commands, devkits_window, viewport, toolbar)
-    cef_console.setup()
     remote_shell = RemoteShell(devkit_commands, devkits_window, toolbar)
     remote_shell.setup()
 
