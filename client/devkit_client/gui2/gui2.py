@@ -1624,19 +1624,22 @@ class SubTool:
         self.settings = settings
         self.modal_wait = None
 
+    def setup(self):
+        self.viewport.signal_draw.connect(self.on_draw)
+        self.toolbar.signal_pressed.connect(self.on_pressed)
+
     def on_draw(self, **kwargs):
         if self.modal_wait is None:
             return
         if not self.modal_wait.draw():
             self.modal_wait = None
 
+    def on_pressed(self, **kwargs):
+        pass
+
 
 class ListTitles(SubTool):
     BUTTON_NAME = 'List Titles'
-
-    def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
-        self.toolbar.signal_pressed.connect(self.on_pressed)
 
     def on_pressed(self, name, selected_devkit, **kwargs):
         if name != self.BUTTON_NAME:
@@ -2386,7 +2389,7 @@ class Screenshot(SubTool):
             self.settings[self.FILENAME_KEY] = ''
         if not self.TIMESTAMP_KEY in self.settings:
             self.settings[self.TIMESTAMP_KEY] = True
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(Screenshot, self).setup()
 
     def devkits_window_draw(self, selected_devkit):
         imgui.text('Folder:')
@@ -2432,7 +2435,7 @@ class PerfOverlay(SubTool):
     FOLDER_KEY = 'PerfOverlay.folder'
 
     def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(PerfOverlay, self).setup()
         if not self.FOLDER_KEY in self.settings:
             self.settings[self.FOLDER_KEY] = str(pathlib.Path(os.path.expanduser('~/.devkit-client-gui/perf_logs')))
         # tri-states
@@ -2511,7 +2514,7 @@ class GPUTrace(SubTool):
         if not self.LAUNCH_KEY in self.settings:
             self.settings[self.LAUNCH_KEY] = True
         self.refresh_gpuvis_path()
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(GPUTrace, self).setup()
 
     def refresh_gpuvis_path(self):
         if ( self.GPUVIS_KEY in self.settings ) and os.path.exists( self.settings[self.GPUVIS_KEY] ):
@@ -2595,7 +2598,7 @@ class RGPCapture(SubTool):
             if rgp_path is None:
                 rgp_path = 'NOT SET'
             self.settings[self.RGP_KEY] = rgp_path
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(RGPCapture, self).setup()
 
     def devkits_window_draw(self, selected_devkit):
         imgui.text('Folder:')
@@ -2638,7 +2641,7 @@ class RenderDocCapture(SubTool):
             if rdoc_path is None:
                 rdoc_path = 'NOT SET'
             self.settings[self.RDOC_KEY] = rdoc_path
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(RenderDocCapture, self).setup()
 
     def on_enable_renderdoc_done(self, selected_devkit, enabled, f):
         selected_devkit.is_renderdoc_capture_enabled = enabled
@@ -2705,7 +2708,7 @@ class ProtonLogs(SubTool):
             self.settings[self.FOLDER_KEY] = str(pathlib.Path(os.path.expanduser('~/Downloads/ProtonLogs')))
         if not self.WINEDEBUG_KEY in self.settings:
             self.settings[self.WINEDEBUG_KEY] = ''
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(ProtonLogs, self).setup()
         # TODO: initialize this better?
         self.show_apply = False
 
@@ -2790,7 +2793,7 @@ class ControllerConfigs(SubTool):
     GAMEID_KEY = 'ControllerConfigs.gameid'
 
     def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(ControllerConfigs, self).setup()
         if not self.FOLDER_KEY in self.settings:
             self.settings[self.FOLDER_KEY] = str(pathlib.Path(os.path.expanduser('~/SteamDeck_ControllerConfigs')))
         if not self.APPID_KEY in self.settings:
@@ -2858,7 +2861,7 @@ class DeleteTitle(SubTool):
     RESET_STEAM_KEY = 'DeleteTitle.reset_steam_client'
 
     def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
+        super(DeleteTitle, self).setup()
         if not self.GAMEID_KEY in self.settings:
             self.settings[self.GAMEID_KEY] = ''
         if not self.DELETE_ALL_KEY in self.settings:
@@ -2920,10 +2923,6 @@ class DeleteTitle(SubTool):
 class RestartSDDM(SubTool):
     BUTTON_NAME = 'Restart Steam/SDDM'
 
-    def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
-        self.toolbar.signal_pressed.connect(self.on_pressed)
-
     def on_pressed(self, name, selected_devkit, **kwargs):
         if name != self.BUTTON_NAME:
             return
@@ -2940,10 +2939,6 @@ class RestartSDDM(SubTool):
 class BrowseFiles(SubTool):
     BUTTON_NAME = 'Browse Device Files'
 
-    def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
-        self.toolbar.signal_pressed.connect(self.on_pressed)
-
     def on_pressed(self, name, selected_devkit, **kwargs):
         if name != self.BUTTON_NAME:
             return
@@ -2959,10 +2954,6 @@ class BrowseFiles(SubTool):
 
 class ChangePassword(SubTool):
     BUTTON_NAME = 'Set or Change Password'
-
-    def setup(self):
-        self.viewport.signal_draw.connect(self.on_draw)
-        self.toolbar.signal_pressed.connect(self.on_pressed)
 
     def on_pressed(self, name, selected_devkit, **kwars):
         if name != self.BUTTON_NAME:
