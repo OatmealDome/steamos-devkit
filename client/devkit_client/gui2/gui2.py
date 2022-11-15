@@ -48,6 +48,8 @@ GAMEID_ALLOWED_PATTERN = '^[A-Za-z_][A-Za-z0-9_.]+$'
 GUEST_LAN_LIMITED_CONNECTIVITY = 'WARNING: DEVICE IS ON GUEST LAN - no network connectivity, cannot be used.'
 GUEST_LAN_PATTERN = 'DISABLE'
 
+TOGGLE_DEV_MODE = 'If this is not a network issue, please toggle developer mode off then back on for the device and try again.'
+
 logger = logging.getLogger(__name__)
 
 
@@ -1294,6 +1296,9 @@ class DevkitsWindow(ToolWindow):
                                 ssh_status = 'open' if kit.ssh_connectivity else 'closed'
                                 http_status = 'open' if kit.http_connectivity else 'closed'
                                 imgui.text(f'WARNING: The device is visible over mDNS, but some network ports are unreachable (22 {ssh_status}, {kit.http_port} {http_status}): cannot use this kit')
+                                if not kit.http_connectivity:
+                                    imgui.set_cursor_pos_x(50*CHARACTER_WIDTH)
+                                    imgui.text(TOGGLE_DEV_MODE)
                 else:
                     assert kit.state == DevkitState.devkit_init_failed
                     imgui.text('Init failed')
@@ -1325,8 +1330,14 @@ class DevkitsWindow(ToolWindow):
                                     imgui.text(f'WARNING: device added by IP, did not respond.')
                                 else:
                                     imgui.text(f'WARNING: device added by IP, some network ports are unreachable (22 {ssh_status}, {kit.http_port} {http_status}): cannot use this kit')
+                                    if not kit.http_connectivity:
+                                        imgui.set_cursor_pos_x(50*CHARACTER_WIDTH)
+                                        imgui.text(TOGGLE_DEV_MODE)
                             else:
                                 imgui.text(f'WARNING: device discovered over mDNS, but some network ports are unreachable (22 {ssh_status}, {kit.http_port} {http_status}): cannot use this kit')
+                                if not kit.http_connectivity:
+                                    imgui.set_cursor_pos_x(50*CHARACTER_WIDTH)
+                                    imgui.text(TOGGLE_DEV_MODE)
                 buttons_index += 1
 
         if len(online_kits) == 0 and len(other_kits) == 0:
