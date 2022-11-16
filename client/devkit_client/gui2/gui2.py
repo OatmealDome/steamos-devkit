@@ -910,6 +910,16 @@ class ModalWait:
     def override_output_text(self, value):
         self._override_output_text = value
 
+    def _draw_button(self):
+        dismiss = False
+        if self._error is None:
+            dismiss = imgui.button('OK')
+        else:
+            imgui.push_style_color(imgui.COLOR_BUTTON, 1, 0, 0)
+            dismiss = imgui.button('ERROR')
+            imgui.pop_style_color()
+        return dismiss
+
     def draw(self):
         # This would be a lot more simple if I had found a way to have imgui auto resize the layout based on content
         # But either I'm too dumb to figure it out, or it's not possible in 1.77
@@ -951,6 +961,8 @@ class ModalWait:
 
         if trigger_resize and not self.user_resized:
             (text_width, text_height) = imgui_calc_text_size(self.output_text)
+            # give a bit more room vertically between the multiline box and the button
+            text_height += 8
             # minimum dimensions, only increase dimensions on auto-resize, never exceed viewport size
             self.dialog_width = min(self.viewport.width, max(15*CHARACTER_WIDTH, len(self.title)*CHARACTER_WIDTH, text_width, self.dialog_width))
             # account for the button vertical space at the bottom
@@ -973,13 +985,7 @@ class ModalWait:
                     if imgui.button('Cancel'):
                         self.cancel_signal.emit()
             else:
-                dismiss = False
-                if self._error is None:
-                    dismiss = imgui.button('OK')
-                else:
-                    imgui.push_style_color(imgui.COLOR_BUTTON, 1, 0, 0)
-                    dismiss = imgui.button('ERROR')
-                    imgui.pop_style_color()
+                dismiss = self._draw_button()
 
                 # Press OK button, or hit escape/enter to dismiss once the task is complete
                 keyboard_state = sdl2.SDL_GetKeyboardState(None)
