@@ -1005,49 +1005,6 @@ class ModalWait:
         return True
 
 
-class ModalListBox:
-    def __init__(self, viewport, title, items, selected_item = 0):
-        self.viewport = viewport
-        self.title = title
-        self.items = items
-        self.selected_item = selected_item # index
-
-        self.signal_task_done = signalslot.Signal()
-
-        # cache
-        self.width = None
-        self.height = None
-        self.n_items = None
-
-        self.result = None
-
-    def draw(self):
-        imgui.open_popup(self.title)
-        ret = True
-
-        if self.height is None:
-            self.n_items = min( len(self.items), int( ( self.viewport.height - 3*CHARACTER_HEIGHT ) / ( 1.4 * CHARACTER_HEIGHT ) ) )
-            self.height = int( self.n_items * 1.4 * CHARACTER_HEIGHT + 3 * CHARACTER_HEIGHT )
-            self.width = max( [ imgui_calc_text_size(s)[0] for s in self.items ] ) + 100
-            imgui.set_next_window_size(self.width, self.height)
-            imgui.set_next_window_position((self.viewport.width-self.width)/2, (self.viewport.height-self.height)/2)
-
-        if imgui.begin_popup_modal(self.title):
-            changed, selected_item = imgui.listbox('', self.selected_item, self.items, height_in_items=self.n_items)
-            if changed:
-                self.selected_item = selected_item
-            if imgui.button('OK'):
-                self.result = self.items[self.selected_item]
-                self.signal_task_done.emit()
-                ret = False
-            imgui.same_line()
-            if imgui.button('Cancel'):
-                self.result = None
-                ret = False
-            imgui.end_popup()
-        return ret
-
-
 class DevkitsWindow(ToolWindow):
     '''List online devkits, support registration against a kit and selection for operations.'''
 
