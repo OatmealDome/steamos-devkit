@@ -1031,6 +1031,7 @@ class DevkitsWindow(ToolWindow):
                 proton_logs,
                 controller_configs,
                 delete_title,
+                shutdown_signal,
                 *args):
         super(DevkitsWindow, self).__init__(self.BUTTON_NAME, *args)
         self.conf = conf
@@ -1044,6 +1045,7 @@ class DevkitsWindow(ToolWindow):
         self.proton_logs = proton_logs
         self.controller_configs = controller_configs
         self.delete_title = delete_title
+        self.shutdown_signal = shutdown_signal
         # Visible by default
         self.visible = True
         # Tick every frame regardless of visibility for zeroconf browser
@@ -3348,6 +3350,7 @@ def main():
         proton_logs,
         controller_configs,
         delete_title,
+        shutdown_signal,
         viewport,
         toolbar
     )
