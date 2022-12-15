@@ -75,12 +75,18 @@ class DevkitCommands:
     This is very crufty because reasons. Could be massively simplified now.
     '''
 
-    def __init__(self):
+    def __init__(self, shutdown_signal):
         self.executor = None
         self.signal_steamos_status = signalslot.Signal(args = ['devkit'])
+        # we have some background threads that should early out when shutting down
+        self.shutting_down = False
+        shutdown_signal.connect(self.on_shutdown_signal)
 
     def setup(self):
         self.executor = concurrent.futures.ThreadPoolExecutor()
+
+    def on_shutdown_signal(self, **kwargs):
+        self.shutting_down = True
 
     def _identify(self, devkit):
         machine = self._check_connectivity(devkit)
@@ -396,6 +402,9 @@ class DevkitCommands:
                         logger.info(f'Possible devkit service responding on {machine.address}:{devkit.http_port}')
                         devkit.http_connectivity = True
                 if not devkit.http_connectivity:
+                    if self.shutting_down:
+                        logger.warning('tool is shutting down, early out of _check_connectivity')
+                        return
                     logger.warning('devkit service on portforwarded local ports is not responding, wait and try again')
                     time.sleep(5)
                     attempts += 1
@@ -3117,8 +3126,13 @@ class Settings(collections.abc.MutableMapping):
 
     def shutdown(self):
         '''Use this to save settings and avoid problems due to interpreter shutting down in the destructor.'''
+        if self.is_shutdown:
+            return
         self.save_settings()
         self.is_shutdown = True
+
+    def on_shutdown_signal(self, **kwargs):
+        self.shutdown()
 
     def __del__(self):
         if self.is_shutdown:
@@ -3279,10 +3293,13 @@ def main():
 
     devkit_client.proxy.disable_proxy()
 
-    settings = Settings()
-    atexit.register(settings.shutdown)
+    shutdown_signal = signalslot.Signal()
 
-    devkit_commands = DevkitCommands()
+    settings = Settings()
+    shutdown_signal.connect(settings.on_shutdown_signal)
+    atexit.register(settings.shutdown) # saves settings on abnormal termination
+
+    devkit_commands = DevkitCommands(shutdown_signal)
     devkit_commands.setup()
 
     viewport = ImGui_SDL2_Viewport(1280, 720, "Steam Devkit Management Tool")
@@ -3357,3 +3374,4 @@ def main():
     client_api.setup()
 
     viewport.main()
+    shutdown_signal.emit()
