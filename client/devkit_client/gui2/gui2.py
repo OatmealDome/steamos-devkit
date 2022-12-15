@@ -1131,6 +1131,17 @@ class DevkitsWindow(ToolWindow):
     def _valve_mode_draw(self, ljust):
         pass
 
+    def register_kit(self, kit):
+        register_future = kit.register()
+        self.modal_wait = ModalWait(
+            self.viewport,
+            self.toolbar,
+            'Registering with devkit {!r}'.format(kit.name),
+            register_future,
+            exit_on_success=True
+        )
+        self.modal_wait.override_output_text = 'Please approve pairing on the device...'
+
     def tick(self, visible):
         # === logic tick ===============================================================
         while not self.zc_listener.devkit_events.empty():
@@ -1228,15 +1239,7 @@ class DevkitsWindow(ToolWindow):
                     imgui.text('Registering...')
                 elif kit.state == DevkitState.devkit_not_registered:
                     if imgui.button(f'Register##{buttons_index}'):
-                        register_future = kit.register()
-                        self.modal_wait = ModalWait(
-                            self.viewport,
-                            self.toolbar,
-                            'Registering with devkit {!r}'.format(kit.name),
-                            register_future,
-                            exit_on_success=True
-                        )
-                        self.modal_wait.override_output_text = 'Please approve pairing on the device...'
+                        self.register_kit(kit)
                     limited_connectivity = kit.limited_connectivity
                     # we check for this first thing in _identify, shouldn't be possible to come here without it anymore
                     assert not limited_connectivity is None
