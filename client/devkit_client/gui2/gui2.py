@@ -1378,124 +1378,124 @@ class DevkitsWindow(ToolWindow):
                         self.toolbar.signal_pressed.emit(name=button_name, selected_devkit=self.selected_devkit)
                     same_line = True
 
-            steamos_status = self.selected_devkit.steamos_status
-            assert steamos_status is not None
-            if self.selected_devkit.is_steamdeck:
-                # === gamescope / plasma session select ========================================
-                ljust=24
-                if self.valve_mode:
-                    self._valve_mode_draw(ljust)
-                imgui.text(f'{"Set session":<{ljust}}:')
-                imgui.same_line()
-                imgui.push_item_width(25*CHARACTER_WIDTH)
-                combo_options = steamos_status['session_options'].copy()
-                session_status = steamos_status['session_status']
-                try:
-                    session_status_index = steamos_status['session_options'].index(steamos_status['session_status'])
-                except:
-                    combo_options.append(session_status)
-                    session_status_index = len(combo_options)-1
-                clicked, selected_out = imgui.combo(
-                    '##Session',
-                    session_status_index,
-                    combo_options,
-                )
-                imgui.pop_item_width()
-                if clicked:
-                    # apply immediately
-                    if selected_out < len(steamos_status['session_options']):
-                        apply_session = steamos_status['session_options'][selected_out]
-                        logger.info(f'apply {apply_session}')
-                        set_session_future = self.devkit_commands.set_session(
-                            self.selected_devkit,
-                            apply_session,
-                            True # wait
-                        )
-                        self.modal_wait = ModalWait(
-                            self.viewport,
-                            self.toolbar,
-                            f'Changing session on {self.selected_devkit.name!r}',
-                            set_session_future,
-                            exit_on_success=True,
-                        )
-
-                # === Steam client config ========================================================
-                imgui.text(f'{"Steam client":<{ljust}}:')
-                imgui.same_line()
-                imgui.push_item_width(30*CHARACTER_WIDTH)
-                imgui.text(steamos_status['steam_status_description'])
-                imgui.pop_item_width()
-                imgui.text(f'{"Change to":<{ljust}}:')
-                imgui.same_line()
-                config_options = [
-                    ( 'OS client', 'SteamStatus.OS' ),
-                    ( 'OS client dev mode (logging+cmdline)', 'SteamStatus.OS_DEV' ),
-                ]
-                if steamos_status['has_side_loaded_client']:
-                    config_options.append( ( 'side loaded client', 'SteamStatus.SIDE' ) )
-                status_lookup = steamos_status['steam_status']
-                if status_lookup == 'SteamStatus.VSCODE':
-                    status_lookup = 'SteamStatus.SIDE' # don't distinguish, just say 'side loaded client'
-                steam_config_index = 0
-                try:
-                    steam_config_index = [ v[1] for v in config_options ].index(status_lookup)
-                except:
-                    pass # unknown status, we'll just use 0
-                clicked, selected_config_index = imgui.combo(
-                    '##ConfigSteam',
-                    steam_config_index,
-                    [ v[0] for v in config_options ],
-                )
-                if clicked:
-                    target_steam_client = config_options[selected_config_index][1]
-                    self._set_steam_client(target_steam_client)
-                if status_lookup in ('SteamStatus.OS_DEV', 'SteamStatus.SIDE'):
-                    # Enable setting the command line from here, for both OS client and side-loaded client
-                    if self.steam_client_args is None:
-                        if 'steam_current_args' in steamos_status:
-                            self.steam_client_args = ' '.join(steamos_status['steam_current_args'])
-                        else:
-                            logger.warning('Current command line arguments for the Steam client not available, falling back to default arguments.')
-                            self.steam_client_args = ' '.join(steamos_status['steam_default_args'])
-                    imgui.text(f'{"Arguments":<{ljust}}:')
+                steamos_status = self.selected_devkit.steamos_status
+                assert steamos_status is not None
+                if self.selected_devkit.is_steamdeck:
+                    # === gamescope / plasma session select ========================================
+                    ljust=24
+                    if self.valve_mode:
+                        self._valve_mode_draw(ljust)
+                    imgui.text(f'{"Set session":<{ljust}}:')
                     imgui.same_line()
-                    imgui.push_item_width(60*CHARACTER_WIDTH)
-                    changed, s = imgui.input_text('##CommandLine', self.steam_client_args, 1000)
+                    imgui.push_item_width(25*CHARACTER_WIDTH)
+                    combo_options = steamos_status['session_options'].copy()
+                    session_status = steamos_status['session_status']
+                    try:
+                        session_status_index = steamos_status['session_options'].index(steamos_status['session_status'])
+                    except:
+                        combo_options.append(session_status)
+                        session_status_index = len(combo_options)-1
+                    clicked, selected_out = imgui.combo(
+                        '##Session',
+                        session_status_index,
+                        combo_options,
+                    )
                     imgui.pop_item_width()
-                    if changed:
-                        self.steam_client_args = s
+                    if clicked:
+                        # apply immediately
+                        if selected_out < len(steamos_status['session_options']):
+                            apply_session = steamos_status['session_options'][selected_out]
+                            logger.info(f'apply {apply_session}')
+                            set_session_future = self.devkit_commands.set_session(
+                                self.selected_devkit,
+                                apply_session,
+                                True # wait
+                            )
+                            self.modal_wait = ModalWait(
+                                self.viewport,
+                                self.toolbar,
+                                f'Changing session on {self.selected_devkit.name!r}',
+                                set_session_future,
+                                exit_on_success=True,
+                            )
+    
+                    # === Steam client config ========================================================
+                    imgui.text(f'{"Steam client":<{ljust}}:')
                     imgui.same_line()
-                    if imgui.button('Reset'):
-                        # Reset to the default arguments out of gamescope-session
-                        self.steam_client_args = ' '.join(steamos_status['steam_default_args'])
-                    current_args = ' '.join(steamos_status['steam_current_args']) if steamos_status['steam_current_args'] is not None else None
-                    dirty = self.steam_client_args != current_args
-                    if dirty:
+                    imgui.push_item_width(30*CHARACTER_WIDTH)
+                    imgui.text(steamos_status['steam_status_description'])
+                    imgui.pop_item_width()
+                    imgui.text(f'{"Change to":<{ljust}}:')
+                    imgui.same_line()
+                    config_options = [
+                        ( 'OS client', 'SteamStatus.OS' ),
+                        ( 'OS client dev mode (logging+cmdline)', 'SteamStatus.OS_DEV' ),
+                    ]
+                    if steamos_status['has_side_loaded_client']:
+                        config_options.append( ( 'side loaded client', 'SteamStatus.SIDE' ) )
+                    status_lookup = steamos_status['steam_status']
+                    if status_lookup == 'SteamStatus.VSCODE':
+                        status_lookup = 'SteamStatus.SIDE' # don't distinguish, just say 'side loaded client'
+                    steam_config_index = 0
+                    try:
+                        steam_config_index = [ v[1] for v in config_options ].index(status_lookup)
+                    except:
+                        pass # unknown status, we'll just use 0
+                    clicked, selected_config_index = imgui.combo(
+                        '##ConfigSteam',
+                        steam_config_index,
+                        [ v[0] for v in config_options ],
+                    )
+                    if clicked:
+                        target_steam_client = config_options[selected_config_index][1]
+                        self._set_steam_client(target_steam_client)
+                    if status_lookup in ('SteamStatus.OS_DEV', 'SteamStatus.SIDE'):
+                        # Enable setting the command line from here, for both OS client and side-loaded client
+                        if self.steam_client_args is None:
+                            if 'steam_current_args' in steamos_status:
+                                self.steam_client_args = ' '.join(steamos_status['steam_current_args'])
+                            else:
+                                logger.warning('Current command line arguments for the Steam client not available, falling back to default arguments.')
+                                self.steam_client_args = ' '.join(steamos_status['steam_default_args'])
+                        imgui.text(f'{"Arguments":<{ljust}}:')
                         imgui.same_line()
-                        if imgui.button('Apply'):
-                            self._set_steam_client(status_lookup)
-                imgui.separator()
-
-            subtool_list = []
-            if self.selected_devkit.is_steamdeck:
-                # subtools requiring some amount of device side support, which we only enable against the deck
+                        imgui.push_item_width(60*CHARACTER_WIDTH)
+                        changed, s = imgui.input_text('##CommandLine', self.steam_client_args, 1000)
+                        imgui.pop_item_width()
+                        if changed:
+                            self.steam_client_args = s
+                        imgui.same_line()
+                        if imgui.button('Reset'):
+                            # Reset to the default arguments out of gamescope-session
+                            self.steam_client_args = ' '.join(steamos_status['steam_default_args'])
+                        current_args = ' '.join(steamos_status['steam_current_args']) if steamos_status['steam_current_args'] is not None else None
+                        dirty = self.steam_client_args != current_args
+                        if dirty:
+                            imgui.same_line()
+                            if imgui.button('Apply'):
+                                self._set_steam_client(status_lookup)
+                    imgui.separator()
+    
+                subtool_list = []
+                if self.selected_devkit.is_steamdeck:
+                    # subtools requiring some amount of device side support, which we only enable against the deck
+                    subtool_list += [
+                        self.screenshot,
+                        self.perf_overlay,
+                        self.gpu_trace,
+                        self.rgp_capture,
+                    ]
+                # subtools that work against Steam linux desktop targets too
                 subtool_list += [
-                    self.screenshot,
-                    self.perf_overlay,
-                    self.gpu_trace,
-                    self.rgp_capture,
+                    self.renderdoc_capture,
+                    self.proton_logs,
+                    self.controller_configs,
+                    self.delete_title,
                 ]
-            # subtools that work against Steam linux desktop targets too
-            subtool_list += [
-                self.renderdoc_capture,
-                self.proton_logs,
-                self.controller_configs,
-                self.delete_title,
-            ]
-
-            # sub tools do their own drawing in the devkits window and have their own trigger buttons
-            for subtool in subtool_list:
-                subtool.devkits_window_draw(self.selected_devkit)
+    
+                # sub tools do their own drawing in the devkits window and have their own trigger buttons
+                for subtool in subtool_list:
+                    subtool.devkits_window_draw(self.selected_devkit)
 
         imgui.end()
 
