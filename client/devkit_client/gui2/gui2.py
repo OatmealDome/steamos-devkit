@@ -2695,7 +2695,7 @@ class ProtonLogs(SubTool):
         self.modal_wait = ModalWait(
             self.viewport,
             self.toolbar,
-            'Apply Proton log settings on {selected_devkit.name}',
+            f'Apply Proton log settings on {selected_devkit.name}',
             switch_future,
             exit_on_success = True,
         )
