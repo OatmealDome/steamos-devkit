@@ -62,15 +62,16 @@ class SteamConfig(enum.Enum):
         return DESCRIPTIONS[self]
 
 
-SESSION_NAMES = ['gamescope', 'plasma-wayland-persistent', 'plasma-persistent', 'plasma']
+SESSION_NAMES = ['gamescope', 'plasma-x11', 'plasma-x11-persistent', 'plasma-wayland', 'plasma-wayland-persistent']
 
 class SessionConfig(enum.IntEnum):
     # note: matches SESSION_NAMES indexes
     GAMESCOPE = 0
-    PLASMA_WAYLAND = 1
-    PLASMA = 2
-    PLASMA_ONCE = 3
-    ERROR = 4
+    PLASMA_X11 = 1
+    PLASMA_X11_PERSISTENT = 2
+    PLASMA_WAYLAND = 3
+    PLASMA_WAYLAND_PERSISTENT = 4
+    ERROR = 5
 
 def cef_debugging():
     '''Only sane way to check is to look for the listening port.'''
@@ -168,27 +169,38 @@ def osclient_version():
 def session_config():
     '''What is the graphics session configuration?'''
     # needs to be kept in sync with whatever steamos-session-select is doing
-    if 'XDG_CONF_DIR' in os.environ:
-        sentinel_file = os.path.join(os.environ['XDG_CONF_DIR'], 'steamos-session-select')
+    sentinel_file = os.path.join(
+        os.environ.get(
+            'XDG_CONFIG_DIR',
+            os.path.join(os.environ['HOME'], '.config')
+        ),
+        'steamos-session-select'
+    )
+    # the sentinel file if exists will point to x11 or wayland
+    # (hu we don't use this for anything)
+    #is_wayland = False
+    #if os.path.exists(sentinel_file):
+    #    s = open(sentinel_file, 'rt').read()
+    #    is_wayland = s.find('wayland') != -1
+    conf_file = '/etc/sddm.conf.d/zz-steamos-autologin.conf'
+    if os.path.exists(conf_file):
+        s = open(conf_file, 'rt').read()
+        if s.find('plasmawayland.desktop') != -1:
+            return SessionConfig.PLASMA_WAYLAND_PERSISTENT
+        if s.find('plasma.desktop') != -1:
+            return SessionConfig.PLASMA_X11_PERSISTENT
+        if s.find('gamescope-wayland.desktop') != -1:
+            return SessionConfig.GAMESCOPE
+        if s.find('plasma-steamos-oneshot.desktop') != -1:
+            return SessionConfig.PLASMA_X11
+        if s.find('plasma-steamos-wayland-oneshot.desktop') != -1:
+            return SessionConfig.PLASMA_WAYLAND
     else:
-        # XDG_CONF_DIR env var isn't set on Jupiter atm, so expect this path
-        sentinel_file = os.path.join(os.environ['HOME'], '.config', 'steamos-session-select')
-    if not os.path.exists(sentinel_file):
-        logger.info(f'sentinel file does not exist: {sentinel_file}')
-        # either steamos-session-select has never been used, or it's plasma once
+        # if the conf file doesn't exist we are likely in the default config
+        # check for a running gamescope for sanity
         if subprocess.call('pgrep -a -x gamescope', shell=True, stdout=subprocess.DEVNULL) == 0:
             return SessionConfig.GAMESCOPE
-        return SessionConfig.PLASMA_ONCE
-    s = open(sentinel_file, 'rt').read()
-    if s.find('plasma-steam-oneshot') != -1:
-        return SessionConfig.PLASMA_ONCE
-    if s.find('plasmawayland') != -1:
-        return SessionConfig.PLASMA_WAYLAND
-    if s.find('plasma') != -1:
-        return SessionConfig.PLASMA
-    if s.find('gamescope') != -1:
-        return SessionConfig.GAMESCOPE
-    logger.warning(f'could not determine session from {sentinel_file!r}: {s!r}')
+    # couldn't figure it out, halp
     return SessionConfig.ERROR
 
 def get_os_info():

@@ -1573,7 +1573,19 @@ def steamos_get_status(args):
 # Returns None to indicate a failure
 def set_session(args):
     ssh = _open_ssh_for_args(args)
-    _simple_ssh(ssh, f'steamos-session-select {args.session}')
+    # Must match SESSION_NAMES in steamos-get-status
+    # Translate from SESSION_NAMES to the right args and setup for the steamos-session-select script..
+    set_wayland = False
+    if args.session in ('plasma-x11', 'plasma-wayland'):
+        select_arg = 'plasma'
+        set_wayland = ( args.session == 'plasma-wayland' )
+    else:
+        select_arg = args.session
+    if set_wayland:
+        _simple_ssh(ssh, 'echo wayland > ${XDG_CONF_DIR:-"$HOME/.config"}/steamos-session-type')
+    else:
+        _simple_ssh(ssh, 'rm -f ${XDG_CONF_DIR:-"$HOME/.config"}/steamos-session-type')
+    _simple_ssh(ssh, f'steamos-session-select {select_arg}')
     if args.wait:
         count = 0
         while count < 5:
