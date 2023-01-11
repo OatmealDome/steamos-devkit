@@ -402,11 +402,14 @@ class DevkitCommands:
                         logger.info(f'Possible devkit service responding on {machine.address}:{devkit.http_port}')
                         devkit.http_connectivity = True
                 if not devkit.http_connectivity:
-                    if self.shutting_down:
-                        logger.warning('tool is shutting down, early out of _check_connectivity')
-                        return
                     logger.warning('devkit service on portforwarded local ports is not responding, wait and try again')
                     time.sleep(5)
+                    if self.shutting_down:
+                        logger.warning('tool is shutting down, early out of _check_connectivity')
+                        devkit.state = DevkitState.devkit_release
+                    # could have been released from elsewhere while we were sleeping too
+                    if devkit.state == DevkitState.devkit_release:
+                        raise DevkitReleased()
                     attempts += 1
                 else:
                     # if we had to do loop and wait for the tunnel, the machine info is incomplete and causes problems, so refresh
@@ -559,6 +562,7 @@ class DevkitState(enum.Enum):
     devkit_init = enum.auto()
     devkit_registering = enum.auto()
     devkit_init_failed = enum.auto()
+    devkit_release = enum.auto()
     devkit_not_registered = enum.auto()
     devkit_online = enum.auto()
 
@@ -566,6 +570,9 @@ class DevkitNotRegistered(Exception):
     pass
 
 class DevkitNoConnectivity(Exception):
+    pass
+
+class DevkitReleased(Exception):
     pass
 
 class Devkit:
@@ -736,6 +743,9 @@ class Devkit:
         assert f is self.init_future
         try:
             (machine, steamos_status) = f.result()
+        except DevkitReleased:
+            # this devkit instance has been abandonned
+            return
         except DevkitNotRegistered as e:
             self.state = DevkitState.devkit_not_registered
         except DevkitNoConnectivity as e:
