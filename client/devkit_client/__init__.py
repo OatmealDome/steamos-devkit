@@ -654,15 +654,23 @@ class DevkitClient(object):
         if sys.platform == 'win32':
             localdir = self.native_to_cygwin_path(localdir)
 
+        if self.ssh_known_hosts:
+            # we double shell escape here, which will be a no-op in most cases,
+            # but in pathological setups (Windows with spaces in the path),
+            # a single quote escaping is apparently not enough, presumably because the rsh gets funnelled through another shell:
+            # https://github.com/PowerShell/Win32-OpenSSH/issues/1784
+            # ^ if this bug gets fixed, will this regress?
+            ssh_known_hosts = f'-o UserKnownHostsFile={shlex.quote(shlex.quote(self.ssh_known_hosts))}'
+        else:
+            ssh_known_hosts = ''
+
+        rsh_cmd = f'{shlex.quote(self.ssh)} {ssh_known_hosts} -o StrictHostKeyChecking=no -i {shlex.quote(self.keypath)}'
+
         cmd = [
             self.rsync,
             "-av",
             "--chmod=Du=rwx,Dgo=rx,Fu=rwx,Fog=rx",
-            "-e", '{} {} -o StrictHostKeyChecking=no -i {}'.format(
-                shlex.quote(self.ssh),
-                '-o UserKnownHostsFile={}'.format(shlex.quote(self.ssh_known_hosts)) if self.ssh_known_hosts else '',
-                shlex.quote(self.keypath),
-            )
+            "-e", rsh_cmd,
         ]
         if delete_extraneous:
             cmd += ['--delete', '--delete-excluded', '--delete-delay']
