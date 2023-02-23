@@ -477,7 +477,7 @@ def ensure_devkit_key():
             key.write_private_key_file(key_path)
             o = open(pubkey_path, 'w')
             o.write(get_public_key(key))
-        if platform.system() == 'Linux':
+        if platform.system() == 'Linux' or platform.system() == 'Darwin':
             # enforce/fix file permissions
             os.chmod(key_path, 0o400)
             os.chmod(pubkey_path, 0o400)
