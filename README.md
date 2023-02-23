@@ -1,3 +1,14 @@
+# steamos-devkit for macOS
+
+This is a fork of [steamos-devkit](https://gitlab.steamos.cloud/devkit/steamos-devkit) with support for macOS.
+
+I made this for my own personal use, but perhaps others might find it helpful. Please note I will not be able to provide support.
+
+To run, install the latest dev version of `pyimgui` (pip currently has 1.4.1, and the provided wheels are for Linux and Windows only, so you will need to clone the Git repo and build it yourself). Then, run `python3 /path/to/steamos-devkit/client/devkit-gui.py`.
+
+For information on how to use the client, please consult [the Steamworks documentation](https://partner.steamgames.com/doc/steamdeck/loadgames).
+
+The original README file can be found below.
 
 # Windows development: one time system configuration
 
