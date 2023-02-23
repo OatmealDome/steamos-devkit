@@ -516,11 +516,15 @@ class DevkitCommands:
                 logger.info('FileZilla not found in registry')
             else:
                 filezilla = os.path.join(winreg.QueryValue(key, None), 'filezilla.exe')
+        elif platform.system() == 'Darwin':
+            filezilla = '/Applications/FileZilla.app'
         if filezilla is None:
             filezilla = shutil.which('filezilla')
         if filezilla is None or not os.path.exists(filezilla):
             raise Exception('FileZilla not found. Please install in order to use this feature.')
         cmd = [filezilla, '-l', 'ask', f'sftp://{devkit.machine.login}@{devkit.machine.address}']
+        if platform.system() == 'Darwin':
+            cmd = ['open', '-a', filezilla, '--args'] + cmd[1:]
         subprocess.Popen(cmd)
 
     def browse_files(self, *args):
