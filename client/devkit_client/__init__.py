@@ -1312,6 +1312,51 @@ Start-Sleep -Seconds 3
             commands = [powershell_path, '-ExecutionPolicy', 'Bypass', batch.name]
         # ensures we get a separate console when running out of a shell with pipenv
         creationflags=subprocess.CREATE_NEW_CONSOLE
+    elif platform.system() == 'Darwin':
+        with tempfile.NamedTemporaryFile(
+            mode='wt',
+            prefix='devkit-remote-shell',
+            suffix='.applescript',
+            delete=False, # we just leak those .. whatever
+        ) as batch:
+            logging.info(f'Writing and executing {batch.name}:')
+            cmd_line = ""
+            for c in commands:
+                corrected_command = c
+
+                if ' ' in corrected_command:
+                    corrected_command = f'\\"{corrected_command}\\" '
+                
+                if '~' in corrected_command:
+                    corrected_command = corrected_command.replace('~', '/home/deck')
+                
+                cmd_line += f'{corrected_command} '
+            # Window detection adapted from https://stackoverflow.com/a/60373615
+            batch.write(f"""
+tell app "Terminal"
+    set w to do script "{cmd_line}; exit"
+    repeat
+        delay 1
+        if not busy of w then exit repeat
+    end repeat
+    try
+        set theWindow to window of w
+    on error eMsg number eNum
+        if eNum = -1728 then
+            set windowIdPrefix to "window id "
+            set windowIdPosition to (offset of windowIdPrefix in eMsg) + (length of windowIdPrefix)
+            set windowId to (first word of (text windowIdPosition thru -1 of eMsg)) as integer
+            set theWindow to window id windowId
+        else
+            error eMsg number eNum
+        end if
+    end try
+    close theWindow
+end tell
+""")
+            batch.flush()
+
+            commands = ['osascript', batch.name]
     else:
         matched = False
         for terminal_prefix in (
